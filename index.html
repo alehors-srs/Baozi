@@ -146,6 +146,17 @@
   .test-count-select:focus { border-color: #3498db; }
   .test-restart-during { background: #e74c3c; color: #fff; font-size: 16px; padding: 10px 28px; border: none; border-radius: 10px; cursor: pointer; transition: background 0.2s; }
   .test-restart-during:hover { background: #c0392b; }
+  .test-pinyin { font-size: 22px; color: #3498db; margin-top: -18px; margin-bottom: 18px; font-weight: 600; }
+  .test-char-clickable { cursor: pointer; transition: color 0.2s; }
+  .test-char-clickable:hover { color: #3498db; }
+  .test-sound-toggle { background: #fff; border: 2px solid #d0d5db; border-radius: 50%; width: 44px; height: 44px; font-size: 20px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: all 0.2s; vertical-align: middle; margin-right: 10px; padding: 0; }
+  .test-sound-toggle:hover { border-color: #3498db; }
+  .test-sound-toggle.muted { opacity: 0.5; }
+  .test-prev-btn { background: #fff; color: #2c3e50; font-size: 16px; padding: 10px 24px; border: 2px solid #d0d5db; border-radius: 10px; cursor: pointer; transition: all 0.2s; margin-right: 10px; }
+  .test-prev-btn:hover:not(:disabled) { border-color: #3498db; color: #3498db; }
+  .test-prev-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .test-next-btn { background: #3498db; color: #fff; font-size: 16px; padding: 10px 28px; border: none; border-radius: 10px; cursor: pointer; transition: background 0.2s; margin-top: 20px; }
+  .test-next-btn:hover { background: #2980b9; }
 
 </style>
 <script src="https://code.responsivevoice.org/responsivevoice.js"></script>
@@ -242,6 +253,8 @@
       <div class="test-progress-text" id="test-progress-text">Вопрос 1 из 10</div>
     </div>
     <div style="text-align:center; margin-bottom:16px;">
+      <button class="test-sound-toggle" id="test-sound-toggle" title="Включить/выключить озвучку">🔊</button>
+      <button class="test-prev-btn" id="test-prev-btn" disabled>← Предыдущая</button>
       <button class="test-restart-during" id="test-restart-during-btn">Начать сначала</button>
     </div>
     <div class="test-card-wrap" id="test-card-container"></div>
@@ -855,6 +868,7 @@ let testQuestions = [];
 let testCurrentIdx = 0;
 let testScore = 0;
 let testCount = 10;
+let testSoundEnabled = true;
 
 function startTest() {
   const sel = document.getElementById('test-count');
@@ -870,7 +884,7 @@ function startTest() {
   document.getElementById('test-start').style.display = 'none';
   document.getElementById('test-result').style.display = 'none';
   document.getElementById('test-quiz').style.display = 'block';
-  renderTestQuestion();
+  renderTestQuestion(false);
 }
 
 function restartTest() {
@@ -881,7 +895,14 @@ function restartTest() {
   if (listEl) listEl.innerHTML = '';
 }
 
-function renderTestQuestion() {
+function updateTestPrevButton() {
+  const prevBtn = document.getElementById('test-prev-btn');
+  if (prevBtn) {
+    prevBtn.disabled = testCurrentIdx <= 0;
+  }
+}
+
+function renderTestQuestion(isReview) {
   const q = testQuestions[testCurrentIdx];
   const container = document.getElementById('test-card-container');
   container.innerHTML = '';
@@ -891,9 +912,29 @@ function renderTestQuestion() {
   fill.style.width = ((testCurrentIdx) / testQuestions.length * 100) + '%';
   text.textContent = 'Вопрос ' + (testCurrentIdx + 1) + ' из ' + testQuestions.length;
 
+  updateTestPrevButton();
+
   const card = document.createElement('div');
   card.className = 'test-card';
-  card.innerHTML = '<div class="test-char">' + q.char + '</div>';
+
+  const charDiv = document.createElement('div');
+  charDiv.className = 'test-char';
+  charDiv.textContent = q.char;
+
+  // If reviewing or already answered, show pinyin and make char clickable
+  if (isReview || q.userAnswer !== null) {
+    charDiv.classList.add('test-char-clickable');
+    charDiv.title = 'Нажмите, чтобы прослушать';
+    charDiv.addEventListener('click', () => speakChinese(q.char));
+  }
+  card.appendChild(charDiv);
+
+  if (isReview || q.userAnswer !== null) {
+    const pinyinDiv = document.createElement('div');
+    pinyinDiv.className = 'test-pinyin';
+    pinyinDiv.textContent = q.pinyin;
+    card.appendChild(pinyinDiv);
+  }
 
   const optionsDiv = document.createElement('div');
   optionsDiv.className = 'test-options';
@@ -902,12 +943,57 @@ function renderTestQuestion() {
     const btn = document.createElement('div');
     btn.className = 'test-option';
     btn.textContent = opt;
-    btn.addEventListener('click', () => handleTestAnswer(btn, opt, q));
+
+    if (q.userAnswer !== null) {
+      // Already answered — show result state
+      btn.classList.add('disabled');
+      if (opt === q.correct) {
+        btn.classList.add('correct');
+      } else if (opt === q.userAnswer) {
+        btn.classList.add('wrong');
+      }
+    } else {
+      btn.addEventListener('click', () => handleTestAnswer(btn, opt, q));
+    }
     optionsDiv.appendChild(btn);
   });
 
   card.appendChild(optionsDiv);
+
+  // If reviewing a previous card, add a "Next" button to go forward
+  if (isReview) {
+    const nextBtn = document.createElement('button');
+    nextBtn.className = 'test-next-btn';
+    nextBtn.textContent = 'Следующая →';
+    nextBtn.addEventListener('click', () => {
+      testCurrentIdx++;
+      if (testCurrentIdx < testQuestions.length) {
+        renderTestQuestion(testQuestions[testCurrentIdx].userAnswer !== null);
+      } else {
+        showTestResult();
+      }
+    });
+    card.appendChild(nextBtn);
+  }
+
   container.appendChild(card);
+}
+
+function speakChineseWithCallback(text, onEnd) {
+  if (typeof responsiveVoice !== 'undefined') {
+    responsiveVoice.cancel();
+    responsiveVoice.speak(text, 'Chinese Female', {rate: 0.72, onend: onEnd});
+  } else if ('speechSynthesis' in window) {
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'zh-CN';
+    u.rate = 0.72;
+    u.onend = onEnd;
+    u.onerror = onEnd;
+    speechSynthesis.speak(u);
+  } else {
+    onEnd();
+  }
 }
 
 function handleTestAnswer(btn, selected, q) {
@@ -925,14 +1011,43 @@ function handleTestAnswer(btn, selected, q) {
     allOptions.forEach(o => { if (o.textContent === q.correct) o.classList.add('correct'); });
   }
 
-  setTimeout(() => {
+  // Show pinyin below the character
+  const card = btn.closest('.test-card');
+  const charDiv = card.querySelector('.test-char');
+  const pinyinDiv = document.createElement('div');
+  pinyinDiv.className = 'test-pinyin';
+  pinyinDiv.textContent = q.pinyin;
+  charDiv.insertAdjacentElement('afterend', pinyinDiv);
+
+  // Make character clickable for audio
+  charDiv.classList.add('test-char-clickable');
+  charDiv.title = 'Нажмите, чтобы прослушать';
+  charDiv.addEventListener('click', () => speakChinese(q.char));
+
+  function advance() {
     testCurrentIdx++;
     if (testCurrentIdx < testQuestions.length) {
-      renderTestQuestion();
+      renderTestQuestion(false);
     } else {
       showTestResult();
     }
-  }, 900);
+  }
+
+  if (testSoundEnabled) {
+    // Play audio, then wait 1 second after audio ends
+    let advanced = false;
+    function doAdvance() {
+      if (advanced) return;
+      advanced = true;
+      setTimeout(advance, 500);
+    }
+    speakChineseWithCallback(q.char, doAdvance);
+    // Fallback: if audio doesn't fire onend within 8 seconds, advance anyway
+    setTimeout(doAdvance, 8000);
+  } else {
+    // No sound — wait 1 second then advance
+    setTimeout(advance, 1000);
+  }
 }
 
 function showTestResult() {
@@ -972,6 +1087,25 @@ function showTestResult() {
 document.getElementById('test-start-btn').addEventListener('click', startTest);
 document.getElementById('test-restart-btn').addEventListener('click', startTest);
 document.getElementById('test-restart-during-btn').addEventListener('click', restartTest);
+
+// Sound toggle button
+document.getElementById('test-sound-toggle').addEventListener('click', function() {
+  testSoundEnabled = !testSoundEnabled;
+  this.textContent = testSoundEnabled ? '🔊' : '🔇';
+  if (!testSoundEnabled) {
+    this.classList.add('muted');
+  } else {
+    this.classList.remove('muted');
+  }
+});
+
+// Previous card button
+document.getElementById('test-prev-btn').addEventListener('click', function() {
+  if (testCurrentIdx > 0) {
+    testCurrentIdx--;
+    renderTestQuestion(testQuestions[testCurrentIdx].userAnswer !== null);
+  }
+});
 
 </script>
 </body>
