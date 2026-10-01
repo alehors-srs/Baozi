@@ -34,7 +34,7 @@ $wordsFile = __DIR__ . '/words.js';
 
 if (!file_exists($wordsFile)) {
     http_response_code(404);
-    echo 'ERROR: words.js not found';
+    echo 'ERROR: words.js not found at ' . $wordsFile;
     exit;
 }
 
@@ -47,65 +47,43 @@ if ($current === false) {
 }
 
 // Формируем новую запись для JS-массива
-$newEntry = "  {char: "" . $char . "", pinyin: "" . $pinyin . "", translation: "" . $translation . ""}";
-
-// Стратегия: находим последнюю запись вида } ] или }] перед закрывающей частью
-// и вставляем перед закрывающей скобкой массива
-// words.js обычно выглядит как: window.dictionary = [ ... ];
-// или: dictionary = [ ... ];
+$newEntry = "  {char: \"" . $char . "\", pinyin: \"" . $pinyin . "\", translation: \"" . $translation . "\"}";
 
 // Проверяем, есть ли уже слово с таким иероглифом
-if (strpos($current, $char) !== false) {
-    // Точнее — ищем {char: "ИЕРОГЛИФ"
-    $pattern = '/\{\s*char\s*:\s*["\']' . preg_quote($char, '/') . '["\']/u';
-    if (preg_match($pattern, $current)) {
-        echo 'OK: Word already exists';
-        exit;
-    }
-}
-
-// Ищем позицию закрывающей скобки массива ]
-// Поддерживаем форматы:
-//   window.dictionary = [ ... ];
-//   dictionary = [ ... ];
-
-// Находим последний ] перед );
- или ; в конце файла
-if (preg_match('/(.*)\]\s*\)\s*;\s*$/s', $current, $matches)) {
-    // Формат: ...]; (с круглой скобкой)
-    $beforeBracket = $matches[1];
-    $afterBracket = ']' . substr($current, strlen($beforeBracket) + 1);
-    
-    // Проверяем, нужна ли запятая перед новой записью
-    $trimmedBefore = rtrim($beforeBracket);
-    $needsComma = '';
-    if (strlen($trimmedBefore) > 0 && substr($trimmedBefore, -1) !== '[' && substr($trimmedBefore, -1) !== ',') {
-        $needsComma = ',';
-    }
-    
-    // Сохраняем оригинальные пробелы/переносы перед ]
-    $removedPart = substr($beforeBracket, strlen($trimmedBefore));
-    
-    $newContent = $trimmedBefore . $needsComma . "\n" . $newEntry . $removedPart . $afterBracket;
-} elseif (preg_match('/(.*)\]\s*;\s*$/s', $current, $matches)) {
-    // Формат: ...];
-    $beforeBracket = $matches[1];
-    $afterBracket = ']' . substr($current, strlen($beforeBracket) + 1);
-    
-    $trimmedBefore = rtrim($beforeBracket);
-    $needsComma = '';
-    if (strlen($trimmedBefore) > 0 && substr($trimmedBefore, -1) !== '[' && substr($trimmedBefore, -1) !== ',') {
-        $needsComma = ',';
-    }
-    
-    $removedPart = substr($beforeBracket, strlen($trimmedBefore));
-    
-    $newContent = $trimmedBefore . $needsComma . "\n" . $newEntry . $removedPart . $afterBracket;
-} else {
-    http_response_code(500);
-    echo 'ERROR: Cannot parse words.js structure';
+$pattern = '/\{\s*char\s*:\s*["\']' . preg_quote($char, '/') . '["\']/u';
+if (preg_match($pattern, $current)) {
+    echo 'OK: Word already exists';
     exit;
 }
+
+// Ищем последнюю закрывающую скобку массива ]
+// Поддерживаем разные форматы:
+//   window.dictionary = [ ... ];
+//   dictionary = [ ... ];
+//   var dictionary = [ ... ];
+
+// Стратегия: находим последний ] в файле и вставляем перед ним
+$lastBracket = strrpos($current, ']');
+if ($lastBracket === false) {
+    http_response_code(500);
+    echo 'ERROR: Cannot find closing bracket in words.js';
+    exit;
+}
+
+$beforeBracket = substr($current, 0, $lastBracket);
+$afterBracket = substr($current, $lastBracket);
+
+// Проверяем, нужна ли запятая перед новой записью
+$trimmedBefore = rtrim($beforeBracket);
+$needsComma = '';
+if (strlen($trimmedBefore) > 0 && substr($trimmedBefore, -1) !== '[' && substr($trimmedBefore, -1) !== ',') {
+    $needsComma = ',';
+}
+
+// Сохраняем оригинальные пробелы/переносы перед ]
+$removedPart = substr($beforeBracket, strlen($trimmedBefore));
+
+$newContent = $trimmedBefore . $needsComma . "\n" . $newEntry . $removedPart . $afterBracket;
 
 // Записываем обновлённый файл
 $result = file_put_contents($wordsFile, $newContent);

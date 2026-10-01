@@ -254,8 +254,11 @@
     <div class="add-word-form">
       <div class="add-word-row">
         <input type="text" id="add-char" placeholder="Введите иероглиф(ы)…" autocomplete="off">
+      </div>
+      <div class="add-word-lookup-wrap" style="text-align:center; margin-top:8px;">
         <button id="add-lookup-btn" class="lookup-btn">Определить</button>
       </div>
+      <div id="add-status" class="add-status"></div>
       <div id="add-word-preview" class="add-word-preview" style="display:none;">
         <div class="add-word-field">
           <label>Пиньинь:</label>
@@ -269,7 +272,6 @@
           <button id="add-confirm-btn" class="add-confirm-btn">Добавить в словарь</button>
           <button id="add-cancel-btn" class="add-cancel-btn">Отмена</button>
         </div>
-        <div id="add-status" class="add-status"></div>
       </div>
     </div>
   </div>
@@ -762,7 +764,7 @@ function isChinese(str) {
 
 function searchDictionary(query) {
   const q = query.trim().toLowerCase();
-  if (!q) return [];
+  if (!q) return dictionary.slice();
   
   const results = [];
   const seen = new Set();
@@ -971,6 +973,8 @@ async function confirmAddWord() {
     formData.append('translation', translationVal);
 
     const resp = await fetch(SAVE_ENDPOINT, { method: 'POST', body: formData });
+    const text = await resp.text();
+    console.log('Save response:', resp.status, text);
     if (resp.ok) {
       serverSaved = true;
     }
