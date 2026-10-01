@@ -160,8 +160,35 @@
   .test-next-btn { background: #3498db; color: #fff; font-size: 16px; padding: 10px 28px; border: none; border-radius: 10px; cursor: pointer; transition: background 0.2s; margin-top: 20px; }
   .test-next-btn:hover { background: #2980b9; }
 
+  /* Add word section */
+  .add-word-section { max-width: 700px; margin: 0 auto 28px; background: #fff; border-radius: 14px; padding: 22px 26px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); }
+  .add-word-form { display: flex; flex-direction: column; gap: 14px; }
+  .add-word-row { display: flex; gap: 10px; }
+  .add-word-row input { flex: 1; padding: 12px 16px; font-size: 18px; border: 2px solid #d0d5db; border-radius: 10px; outline: none; transition: border-color 0.2s; }
+  .add-word-row input:focus { border-color: #3498db; }
+  .lookup-btn { padding: 12px 24px; font-size: 16px; background: #9b59b6; color: #fff; border: none; border-radius: 10px; cursor: pointer; transition: background 0.2s; white-space: nowrap; }
+  .lookup-btn:hover { background: #8e44ad; }
+  .lookup-btn:disabled { opacity: 0.6; cursor: wait; }
+  .add-word-preview { display: flex; flex-direction: column; gap: 12px; }
+  .add-word-field { display: flex; align-items: center; gap: 10px; }
+  .add-word-field label { font-size: 14px; color: #2c3e50; min-width: 70px; font-weight: 600; }
+  .add-word-field input { flex: 1; padding: 10px 14px; font-size: 16px; border: 1px solid #d0d5db; border-radius: 8px; outline: none; transition: border-color 0.2s; }
+  .add-word-field input:focus { border-color: #3498db; }
+  .add-word-actions { display: flex; gap: 10px; justify-content: center; margin-top: 4px; }
+  .add-confirm-btn { padding: 10px 24px; font-size: 16px; background: #27ae60; color: #fff; border: none; border-radius: 10px; cursor: pointer; transition: background 0.2s; }
+  .add-confirm-btn:hover { background: #229954; }
+  .add-confirm-btn:disabled { opacity: 0.6; cursor: wait; }
+  .add-cancel-btn { padding: 10px 24px; font-size: 16px; background: #e0e6ed; color: #2c3e50; border: none; border-radius: 10px; cursor: pointer; transition: background 0.2s; }
+  .add-cancel-btn:hover { background: #d0d5db; }
+  .add-status { text-align: center; font-size: 14px; min-height: 20px; margin-top: 4px; }
+  .add-status.success { color: #27ae60; }
+  .add-status.error { color: #e74c3c; }
+  .add-status.loading { color: #95a5a6; }
+
+
 </style>
 <script src="https://code.responsivevoice.org/responsivevoice.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pinyin-pro/3.29.4/index.js"></script>
 </head>
 <body>
 <h1>Тренировка иероглифов</h1>
@@ -220,6 +247,33 @@
 <!-- TAB 6: Словарь -->
 <div class="tab-content" id="tab6">
   <p class="subtitle">Поиск по иероглифам, пиньиню и русским словам</p>
+
+  <!-- Add word form -->
+  <div class="add-word-section">
+    <h3 style="text-align:center; margin-bottom:14px; color:#2c3e50;">Добавить новое слово</h3>
+    <div class="add-word-form">
+      <div class="add-word-row">
+        <input type="text" id="add-char" placeholder="Введите иероглиф(ы)…" autocomplete="off">
+        <button id="add-lookup-btn" class="lookup-btn">Определить</button>
+      </div>
+      <div id="add-word-preview" class="add-word-preview" style="display:none;">
+        <div class="add-word-field">
+          <label>Пиньинь:</label>
+          <input type="text" id="add-pinyin" placeholder="пиньинь">
+        </div>
+        <div class="add-word-field">
+          <label>Перевод:</label>
+          <input type="text" id="add-translation" placeholder="перевод на русский">
+        </div>
+        <div class="add-word-actions">
+          <button id="add-confirm-btn" class="add-confirm-btn">Добавить в словарь</button>
+          <button id="add-cancel-btn" class="add-cancel-btn">Отмена</button>
+        </div>
+        <div id="add-status" class="add-status"></div>
+      </div>
+    </div>
+  </div>
+
   <div class="dict-search-wrap">
     <input type="text" class="dict-search-input" id="dict-search" placeholder="Введите иероглиф, пиньинь или русское слово…">
   </div>
@@ -780,6 +834,202 @@ document.getElementById('dict-search').addEventListener('input', (e) => {
 
 // Show all words initially
 renderDictResults(dictionary);
+
+// === ADD WORD TO DICTIONARY ===
+
+const addCharInput = document.getElementById('add-char');
+const addLookupBtn = document.getElementById('add-lookup-btn');
+const addPreview = document.getElementById('add-word-preview');
+const addPinyinInput = document.getElementById('add-pinyin');
+const addTranslationInput = document.getElementById('add-translation');
+const addConfirmBtn = document.getElementById('add-confirm-btn');
+const addCancelBtn = document.getElementById('add-cancel-btn');
+const addStatus = document.getElementById('add-status');
+
+// Determine the server endpoint for saving words.
+// Tries save_word.php (same directory). Falls back to localStorage-only if server is unavailable.
+const SAVE_ENDPOINT = 'save_word.php';
+
+addLookupBtn.addEventListener('click', lookupWord);
+addCharInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); lookupWord(); }
+});
+
+addCancelBtn.addEventListener('click', () => {
+  addPreview.style.display = 'none';
+  addCharInput.value = '';
+  addPinyinInput.value = '';
+  addTranslationInput.value = '';
+  addStatus.textContent = '';
+  addStatus.className = 'add-status';
+});
+
+addConfirmBtn.addEventListener('click', confirmAddWord);
+
+async function lookupWord() {
+  const charVal = addCharInput.value.trim();
+  if (!charVal) {
+    addStatus.textContent = 'Введите иероглиф';
+    addStatus.className = 'add-status error';
+    addPreview.style.display = 'none';
+    return;
+  }
+
+  // Check if it contains Chinese characters
+  if (!/[\u4e00-\u9fff]/.test(charVal)) {
+    addStatus.textContent = 'Нужно ввести китайский иероглиф';
+    addStatus.className = 'add-status error';
+    addPreview.style.display = 'none';
+    return;
+  }
+
+  // Check if already in dictionary
+  const existing = dictionary.find(d => d.char === charVal);
+  if (existing) {
+    addStatus.textContent = 'Это слово уже есть в словаре: ' + existing.pinyin + ' — ' + existing.translation;
+    addStatus.className = 'add-status error';
+    addPreview.style.display = 'none';
+    return;
+  }
+
+  addLookupBtn.disabled = true;
+  addLookupBtn.textContent = 'Определяю…';
+  addStatus.textContent = '';
+  addStatus.className = 'add-status';
+
+  try {
+    // 1. Get pinyin from pinyin-pro
+    let pinyinVal = '';
+    if (typeof pinyin !== 'undefined') {
+      pinyinVal = pinyin(charVal, { toneType: 'symbol', type: 'array' }).join(' ');
+    }
+
+    // 2. Get translation from MyMemory API (zh-CN -> ru)
+    let translationVal = '';
+    try {
+      const apiUrl = 'https://api.mymemory.translated.net/get?q=' + encodeURIComponent(charVal) + '&langpair=zh-CN|ru';
+      const resp = await fetch(apiUrl);
+      const data = await resp.json();
+      if (data && data.responseData && data.responseData.translatedText) {
+        translationVal = data.responseData.translatedText;
+      }
+    } catch (e) {
+      console.log('Translation API error:', e);
+    }
+
+    // 3. Show preview with editable fields
+    addPinyinInput.value = pinyinVal || '';
+    addTranslationInput.value = translationVal || '';
+    addPreview.style.display = 'flex';
+
+    if (!pinyinVal && !translationVal) {
+      addStatus.textContent = 'Не удалось определить автоматически — заполните поля вручную.';
+      addStatus.className = 'add-status error';
+    } else if (!pinyinVal) {
+      addStatus.textContent = 'Пиньинь не определён — заполните вручную.';
+      addStatus.className = 'add-status error';
+    } else if (!translationVal) {
+      addStatus.textContent = 'Перевод не получен — заполните вручную.';
+      addStatus.className = 'add-status error';
+    } else {
+      addStatus.textContent = 'Проверьте и при необходимости отредактируйте поля.';
+      addStatus.className = 'add-status loading';
+    }
+
+    addPinyinInput.focus();
+  } catch (e) {
+    addStatus.textContent = 'Ошибка: ' + e.message;
+    addStatus.className = 'add-status error';
+    addPreview.style.display = 'none';
+  } finally {
+    addLookupBtn.disabled = false;
+    addLookupBtn.textContent = 'Определить';
+  }
+}
+
+async function confirmAddWord() {
+  const charVal = addCharInput.value.trim();
+  const pinyinVal = addPinyinInput.value.trim();
+  const translationVal = addTranslationInput.value.trim();
+
+  if (!charVal) { addStatus.textContent = 'Введите иероглиф'; addStatus.className = 'add-status error'; return; }
+  if (!pinyinVal) { addStatus.textContent = 'Введите пиньинь'; addStatus.className = 'add-status error'; return; }
+  if (!translationVal) { addStatus.textContent = 'Введите перевод'; addStatus.className = 'add-status error'; return; }
+
+  addConfirmBtn.disabled = true;
+  addConfirmBtn.textContent = 'Добавляю…';
+  addStatus.textContent = 'Сохранение на сервере…';
+  addStatus.className = 'add-status loading';
+
+  let serverSaved = false;
+
+  // Try to save on server
+  try {
+    const formData = new FormData();
+    formData.append('char', charVal);
+    formData.append('pinyin', pinyinVal);
+    formData.append('translation', translationVal);
+
+    const resp = await fetch(SAVE_ENDPOINT, { method: 'POST', body: formData });
+    if (resp.ok) {
+      const text = await resp.text();
+      if (text.includes('OK') || text.includes('ok') || text.includes('success')) {
+        serverSaved = true;
+      }
+    }
+  } catch (e) {
+    console.log('Server save error:', e);
+  }
+
+  // Add to local dictionary regardless (so it's immediately usable)
+  dictionary.push({ char: charVal, pinyin: pinyinVal, translation: translationVal });
+
+  // Save to localStorage as backup
+  try {
+    let localWords = JSON.parse(localStorage.getItem('baozi_custom_words') || '[]');
+    localWords.push({ char: charVal, pinyin: pinyinVal, translation: translationVal });
+    localStorage.setItem('baozi_custom_words', JSON.stringify(localWords));
+  } catch (e) {}
+
+  // Refresh dictionary display
+  const currentSearch = document.getElementById('dict-search').value;
+  renderDictResults(searchDictionary(currentSearch));
+
+  addConfirmBtn.disabled = false;
+  addConfirmBtn.textContent = 'Добавить в словарь';
+
+  if (serverSaved) {
+    addStatus.textContent = 'Слово добавлено в словарь и сохранено на сервере!';
+    addStatus.className = 'add-status success';
+  } else {
+    addStatus.textContent = 'Слово добавлено локально. Сервер недоступен — слово сохранится на сервере при следующем обновлении.';
+    addStatus.className = 'add-status error';
+  }
+
+  // Clear form after a delay
+  setTimeout(() => {
+    addPreview.style.display = 'none';
+    addCharInput.value = '';
+    addPinyinInput.value = '';
+    addTranslationInput.value = '';
+    addStatus.textContent = '';
+    addStatus.className = 'add-status';
+  }, 2500);
+}
+
+// On page load, merge any localStorage custom words into dictionary
+(function loadCustomWords() {
+  try {
+    const localWords = JSON.parse(localStorage.getItem('baozi_custom_words') || '[]');
+    localWords.forEach(w => {
+      if (!dictionary.find(d => d.char === w.char)) {
+        dictionary.push(w);
+      }
+    });
+    // Refresh display
+    renderDictResults(dictionary);
+  } catch (e) {}
+})();
 
 
 // === TAB 8: Имена ===
