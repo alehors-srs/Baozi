@@ -1,28 +1,29 @@
 <?php
+error_reporting(E_ALL);
+ini_set('display_errors', 0); // Don't show errors in output, only in JSON
 /**
  * save_word.php — добавляет новое слово в words.js на сервере.
  * Принимает POST: char, pinyin, translation
  * Дописывает слово в массив dictionary внутри words.js
  */
 
-header('Content-Type: text/plain; charset=utf-8');
+header('Content-Type: application/json; charset=utf-8');
 
-// Разрешённые методы: GET и POST
-$method = $_SERVER['REQUEST_METHOD'];
-if ($method !== 'POST' && $method !== 'GET') {
+// Разрешённые методы
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
-    echo 'ERROR: Method not allowed';
+    echo json_encode(['status' => 'error', 'message' => 'Method not allowed']);
     exit;
 }
 
-// Получаем данные (поддерживаем GET и POST)
-$char = trim(($method === 'POST' ? $_POST['char'] : $_GET['char']) ?? '');
-$pinyin = trim(($method === 'POST' ? $_POST['pinyin'] : $_GET['pinyin']) ?? '');
-$translation = trim(($method === 'POST' ? $_POST['translation'] : $_GET['translation']) ?? '');
+// Получаем данные
+$char = trim($_POST['char'] ?? '');
+$pinyin = trim($_POST['pinyin'] ?? '');
+$translation = trim($_POST['translation'] ?? '');
 
 if ($char === '' || $pinyin === '' || $translation === '') {
     http_response_code(400);
-    echo 'ERROR: Missing fields';
+    echo json_encode(['status' => 'error', 'message' => 'Missing fields']);
     exit;
 }
 
@@ -35,7 +36,7 @@ $wordsFile = __DIR__ . '/words.js';
 
 if (!file_exists($wordsFile)) {
     http_response_code(404);
-    echo 'ERROR: words.js not found';
+    echo json_encode(['status' => 'error', 'message' => 'words.js not found']);
     exit;
 }
 
@@ -43,7 +44,7 @@ if (!file_exists($wordsFile)) {
 $current = file_get_contents($wordsFile);
 if ($current === false) {
     http_response_code(500);
-    echo 'ERROR: Cannot read words.js';
+    echo json_encode(['status' => 'error', 'message' => 'Cannot read words.js']);
     exit;
 }
 
@@ -60,7 +61,7 @@ if (strpos($current, $char) !== false) {
     // Точнее — ищем {char: "ИЕРОГЛИФ"
     $pattern = '/\{\s*char\s*:\s*["\']' . preg_quote($char, '/') . '["\']/u';
     if (preg_match($pattern, $current)) {
-        echo 'OK: Word already exists';
+        echo json_encode(['status' => 'exists', 'message' => 'Word already exists']);
         exit;
     }
 }
@@ -104,16 +105,22 @@ if (preg_match('/(.*)\]\s*\)\s*;\s*$/s', $current, $matches)) {
     $newContent = $trimmedBefore . $needsComma . "\n" . $newEntry . $removedPart . $afterBracket;
 } else {
     http_response_code(500);
-    echo 'ERROR: Cannot parse words.js structure';
+    echo json_encode(['status' => 'error', 'message' => 'Cannot parse words.js structure']);
+    exit;
+}
+
+// Проверяем права на запись перед записью
+if (!is_writable($wordsFile)) {
+    echo json_encode(['status' => 'error', 'message' => 'words.js is not writable. Current permissions: ' . substr(sprintf('%o', fileperms($wordsFile)), -4)]);
     exit;
 }
 
 // Записываем обновлённый файл
-$result = file_put_contents($wordsFile, $newContent);
+$result = file_put_contents($wordsFile, $newContent, LOCK_EX);
 if ($result === false) {
     http_response_code(500);
-    echo 'ERROR: Cannot write words.js';
+    echo json_encode(['status' => 'error', 'message' => 'Cannot write words.js — check file permissions']);
     exit;
 }
 
-echo 'OK';
+echo json_encode(['status' => 'saved', 'message' => 'Word saved successfully']);
