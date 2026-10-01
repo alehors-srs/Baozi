@@ -965,31 +965,20 @@ async function confirmAddWord() {
 
   // Try to save on server
   try {
-    const resp = await fetch(SAVE_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: 'char=' + encodeURIComponent(charVal) + '&pinyin=' + encodeURIComponent(pinyinVal) + '&translation=' + encodeURIComponent(translationVal)
-    });
-    console.log('Save response status:', resp.status, resp.statusText);
-    const text = await resp.text();
-    console.log('Save response body:', text.substring(0, 200));
+    const formData = new FormData();
+    formData.append('char', charVal);
+    formData.append('pinyin', pinyinVal);
+    formData.append('translation', translationVal);
+
+    const resp = await fetch(SAVE_ENDPOINT, { method: 'POST', body: formData });
     if (resp.ok) {
-      try {
-        const data = JSON.parse(text);
-        if (data.status === 'saved' || data.status === 'exists') {
-          serverSaved = true;
-        } else {
-          console.error('Server error:', data.message || 'Unknown error');
-        }
-      } catch (parseErr) {
-        // Response is not JSON — PHP is likely not executing (served as static text)
-        console.error('Server response is not JSON. PHP may not be executing. Response:', text.substring(0, 200));
+      const text = await resp.text();
+      if (text.includes('OK') || text.includes('ok') || text.includes('success')) {
+        serverSaved = true;
       }
-    } else {
-      console.error('Server returned HTTP', resp.status, resp.statusText);
     }
   } catch (e) {
-    console.error('Server save error:', e);
+    console.log('Server save error:', e);
   }
 
   // Add to local dictionary regardless (so it's immediately usable)
