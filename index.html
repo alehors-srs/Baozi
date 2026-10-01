@@ -161,7 +161,7 @@
   .test-next-btn:hover { background: #2980b9; }
 
   /* Add word section */
-  .add-word-section { max-width: 700px; margin: 0 auto 28px; background: #fff; border-radius: 14px; padding: 22px 26px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); }
+  .add-word-section { max-width: 700px; width: 100%; margin: 0 auto 28px; background: #fff; border-radius: 14px; padding: 22px 26px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); box-sizing: border-box; }
   .add-word-form { display: flex; flex-direction: column; gap: 14px; }
   .add-word-row { display: flex; gap: 10px; }
   .add-word-row input { flex: 1; padding: 12px 16px; font-size: 18px; border: 2px solid #d0d5db; border-radius: 10px; outline: none; transition: border-color 0.2s; }
@@ -169,12 +169,12 @@
   .lookup-btn { padding: 12px 24px; font-size: 16px; background: #9b59b6; color: #fff; border: none; border-radius: 10px; cursor: pointer; transition: background 0.2s; white-space: nowrap; }
   .lookup-btn:hover { background: #8e44ad; }
   .lookup-btn:disabled { opacity: 0.6; cursor: wait; }
-  .add-word-preview { display: flex; flex-direction: column; gap: 12px; }
+  .add-word-preview { display: flex; flex-direction: column; gap: 12px; max-width: 100%; overflow: hidden; }
   .add-word-field { display: flex; align-items: center; gap: 10px; }
   .add-word-field label { font-size: 14px; color: #2c3e50; min-width: 70px; font-weight: 600; }
   .add-word-field input { flex: 1; padding: 10px 14px; font-size: 16px; border: 1px solid #d0d5db; border-radius: 8px; outline: none; transition: border-color 0.2s; }
   .add-word-field input:focus { border-color: #3498db; }
-  .add-word-actions { display: flex; gap: 10px; justify-content: center; margin-top: 4px; }
+  .add-word-actions { display: flex; gap: 10px; justify-content: center; margin-top: 4px; flex-wrap: wrap; }
   .add-confirm-btn { padding: 10px 24px; font-size: 16px; background: #27ae60; color: #fff; border: none; border-radius: 10px; cursor: pointer; transition: background 0.2s; }
   .add-confirm-btn:hover { background: #229954; }
   .add-confirm-btn:disabled { opacity: 0.6; cursor: wait; }
@@ -900,8 +900,8 @@ async function lookupWord() {
   try {
     // 1. Get pinyin from pinyin-pro
     let pinyinVal = '';
-    if (typeof pinyin !== 'undefined') {
-      pinyinVal = pinyin(charVal, { toneType: 'symbol', type: 'array' }).join(' ');
+    if (typeof pinyinPro !== 'undefined') {
+      pinyinVal = pinyinPro.pinyin(charVal, { toneType: 'symbol', type: 'array' }).join(' ');
     }
 
     // 2. Get translation from MyMemory API (zh-CN -> ru)
