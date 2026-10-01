@@ -167,6 +167,7 @@
   .add-word-row input { flex: 1; padding: 12px 16px; font-size: 18px; border: 2px solid #d0d5db; border-radius: 10px; outline: none; transition: border-color 0.2s; }
   .add-word-row input:focus { border-color: #3498db; }
   .lookup-btn { padding: 12px 24px; font-size: 16px; background: #9b59b6; color: #fff; border: none; border-radius: 10px; cursor: pointer; transition: background 0.2s; white-space: nowrap; }
+  .add-word-form > .lookup-btn { align-self: center; }
   .lookup-btn:hover { background: #8e44ad; }
   .lookup-btn:disabled { opacity: 0.6; cursor: wait; }
   .add-word-preview { display: flex; flex-direction: column; gap: 12px; max-width: 100%; overflow: hidden; }
@@ -254,8 +255,8 @@
     <div class="add-word-form">
       <div class="add-word-row">
         <input type="text" id="add-char" placeholder="Введите иероглиф(ы)…" autocomplete="off">
-        <button id="add-lookup-btn" class="lookup-btn">Определить</button>
       </div>
+      <button id="add-lookup-btn" class="lookup-btn" style="align-self:center; margin-top:4px;">Определить</button>
       <div id="add-word-preview" class="add-word-preview" style="display:none;">
         <div class="add-word-field">
           <label>Пиньинь:</label>
@@ -269,8 +270,8 @@
           <button id="add-confirm-btn" class="add-confirm-btn">Добавить в словарь</button>
           <button id="add-cancel-btn" class="add-cancel-btn">Отмена</button>
         </div>
-        <div id="add-status" class="add-status"></div>
       </div>
+      <div id="add-status" class="add-status"></div>
     </div>
   </div>
 
@@ -762,7 +763,7 @@ function isChinese(str) {
 
 function searchDictionary(query) {
   const q = query.trim().toLowerCase();
-  if (!q) return [];
+  if (!q) return dictionary;
   
   const results = [];
   const seen = new Set();
@@ -972,10 +973,7 @@ async function confirmAddWord() {
 
     const resp = await fetch(SAVE_ENDPOINT, { method: 'POST', body: formData });
     if (resp.ok) {
-      const text = await resp.text();
-      if (text.includes('OK') || text.includes('ok') || text.includes('success')) {
-        serverSaved = true;
-      }
+      serverSaved = true;
     }
   } catch (e) {
     console.log('Server save error:', e);
