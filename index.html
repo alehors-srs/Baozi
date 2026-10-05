@@ -887,7 +887,7 @@ function base64ToUtf8(b64) {
 async function fetchCustomWordsFile() {
   const url = 'https://api.github.com/repos/' + GITHUB_CONFIG.owner + '/' + GITHUB_CONFIG.repo + '/contents/' + GITHUB_CONFIG.filePath;
   const resp = await fetch(url + '?t=' + Date.now(), {
-    headers: { 'Authorization': 'token ' + GITHUB_CONFIG.token, 'Accept': 'application/vnd.github.v3+json' }
+    headers: { 'Authorization': 'Bearer ' + GITHUB_CONFIG.token, 'Accept': 'application/vnd.github.v3+json' }
   });
   if (resp.status === 404) return { words: [], sha: null };
   if (!resp.ok) throw new Error('GitHub API error: ' + resp.status);
