@@ -907,7 +907,7 @@ async function saveCustomWordsFile(words, sha) {
   if (sha) body.sha = sha;
   const resp = await fetch(url, {
     method: 'PUT',
-    headers: { 'Authorization': 'token ' + GITHUB_CONFIG.token, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+    headers: { 'Authorization': 'Bearer ' + GITHUB_CONFIG.token, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
     body: JSON.stringify(body)
   });
   if (!resp.ok) {
