@@ -185,6 +185,15 @@
   .add-status.error { color: #e74c3c; }
   .add-status.loading { color: #95a5a6; }
 
+  /* Russian-to-Chinese options */
+  .add-char-options { display: flex; flex-direction: column; gap: 8px; }
+  .add-char-option { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border: 2px solid #d0d5db; border-radius: 10px; cursor: pointer; transition: all 0.2s; background: #fff; }
+  .add-char-option:hover { border-color: #3498db; background: #f8fbfe; }
+  .add-char-option.selected { border-color: #27ae60; background: #f0faf3; }
+  .add-char-option .opt-char { font-size: 28px; color: #2c3e50; min-width: 60px; text-align: center; }
+  .add-char-option .opt-pinyin { font-size: 14px; color: #95a5a6; }
+  .add-char-option .opt-translation { font-size: 14px; color: #7f8c8d; margin-left: auto; }
+  .add-char-options .opt-header { font-size: 13px; color: #2c3e50; font-weight: 600; margin-bottom: 2px; }
 
 </style>
 <script src="https://code.responsivevoice.org/responsivevoice.js"></script>
@@ -253,9 +262,10 @@
     <h3 style="text-align:center; margin-bottom:14px; color:#2c3e50;">Добавить новое слово</h3>
     <div class="add-word-form">
       <div class="add-word-row">
-        <input type="text" id="add-char" placeholder="Введите иероглиф(ы)…" autocomplete="off">
+        <input type="text" id="add-char" placeholder="Введите иероглиф(ы) или русское слово…" autocomplete="off">
         <button id="add-lookup-btn" class="lookup-btn">Определить</button>
       </div>
+      <div id="add-char-options" class="add-char-options" style="display:none;"></div>
       <div id="add-word-preview" class="add-word-preview" style="display:none;">
         <div class="add-word-field">
           <label>Пиньинь:</label>
@@ -269,8 +279,8 @@
           <button id="add-confirm-btn" class="add-confirm-btn">Добавить в словарь</button>
           <button id="add-cancel-btn" class="add-cancel-btn">Отмена</button>
         </div>
-        <div id="add-status" class="add-status"></div>
       </div>
+      <div id="add-status" class="add-status"></div>
     </div>
   </div>
 
@@ -840,15 +850,72 @@ renderDictResults(dictionary);
 const addCharInput = document.getElementById('add-char');
 const addLookupBtn = document.getElementById('add-lookup-btn');
 const addPreview = document.getElementById('add-word-preview');
+const addCharOptions = document.getElementById('add-char-options');
 const addPinyinInput = document.getElementById('add-pinyin');
 const addTranslationInput = document.getElementById('add-translation');
 const addConfirmBtn = document.getElementById('add-confirm-btn');
 const addCancelBtn = document.getElementById('add-cancel-btn');
 const addStatus = document.getElementById('add-status');
 
-// Determine the server endpoint for saving words.
-// Tries save_word.php (same directory). Falls back to localStorage-only if server is unavailable.
-const SAVE_ENDPOINT = 'save_word.php';
+// === GitHub API configuration ===
+// Заполните эти значения для сохранения слов на сервере GitHub.
+// Создайте Personal Access Token: Settings → Developer settings → Personal access tokens → Fine-grained tokens
+// Дайте токену права: Contents — Read and write (для вашего репозитория)
+const GITHUB_CONFIG = {
+  token: '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',
+  owner: 'alehors-srs',
+  repo: 'Baozi',
+  branch: 'main',
+  filePath: 'custom_words.json'
+};
+
+// Вспомогательные функции для base64 и UTF-8
+function utf8ToBase64(str) {
+  const bytes = new TextEncoder().encode(str);
+  let binary = '';
+  bytes.forEach(byte => binary += String.fromCharCode(byte));
+  return btoa(binary);
+}
+function base64ToUtf8(b64) {
+  const binary = atob(b64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return new TextDecoder().decode(bytes);
+}
+
+// Загрузить файл custom_words.json с GitHub API (с обходом кэша)
+async function fetchCustomWordsFile() {
+  const url = 'https://api.github.com/repos/' + GITHUB_CONFIG.owner + '/' + GITHUB_CONFIG.repo + '/contents/' + GITHUB_CONFIG.filePath;
+  const resp = await fetch(url + '?t=' + Date.now(), {
+    headers: { 'Authorization': 'token ' + GITHUB_CONFIG.token, 'Accept': 'application/vnd.github.v3+json' }
+  });
+  if (resp.status === 404) return { words: [], sha: null };
+  if (!resp.ok) throw new Error('GitHub API error: ' + resp.status);
+  const data = await resp.json();
+  const fileContent = data.content ? base64ToUtf8(data.content.replace(/\n/g, '')) : '[]';
+  return { words: JSON.parse(fileContent), sha: data.sha };
+}
+
+// Сохранить файл custom_words.json на GitHub
+async function saveCustomWordsFile(words, sha) {
+  const url = 'https://api.github.com/repos/' + GITHUB_CONFIG.owner + '/' + GITHUB_CONFIG.repo + '/contents/' + GITHUB_CONFIG.filePath;
+  const body = {
+    message: 'Update custom words (' + new Date().toISOString() + ')',
+    content: utf8ToBase64(JSON.stringify(words, null, 2)),
+    branch: GITHUB_CONFIG.branch
+  };
+  if (sha) body.sha = sha;
+  const resp = await fetch(url, {
+    method: 'PUT',
+    headers: { 'Authorization': 'token ' + GITHUB_CONFIG.token, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}));
+    throw new Error('GitHub API error: ' + resp.status + ' ' + (err.message || ''));
+  }
+  return resp.json();
+}
 
 addLookupBtn.addEventListener('click', lookupWord);
 addCharInput.addEventListener('keydown', e => {
@@ -857,6 +924,8 @@ addCharInput.addEventListener('keydown', e => {
 
 addCancelBtn.addEventListener('click', () => {
   addPreview.style.display = 'none';
+  addCharOptions.style.display = 'none';
+  addCharOptions.innerHTML = '';
   addCharInput.value = '';
   addPinyinInput.value = '';
   addTranslationInput.value = '';
@@ -869,74 +938,173 @@ addConfirmBtn.addEventListener('click', confirmAddWord);
 async function lookupWord() {
   const charVal = addCharInput.value.trim();
   if (!charVal) {
-    addStatus.textContent = 'Введите иероглиф';
+    addStatus.textContent = 'Введите иероглиф или русское слово';
     addStatus.className = 'add-status error';
     addPreview.style.display = 'none';
+    addCharOptions.style.display = 'none';
+    addCharOptions.innerHTML = '';
     return;
   }
 
-  // Check if it contains Chinese characters
-  if (!/[\u4e00-\u9fff]/.test(charVal)) {
-    addStatus.textContent = 'Нужно ввести китайский иероглиф';
-    addStatus.className = 'add-status error';
-    addPreview.style.display = 'none';
+  const isChineseInput = /[\u4e00-\u9fff]/.test(charVal);
+
+  // Hide options from previous search
+  addCharOptions.style.display = 'none';
+  addCharOptions.innerHTML = '';
+
+  if (isChineseInput) {
+    // Chinese input — original flow
+    const existing = dictionary.find(d => d.char === charVal);
+    if (existing) {
+      addStatus.textContent = 'Это слово уже есть в словаре: ' + existing.pinyin + ' — ' + existing.translation;
+      addStatus.className = 'add-status error';
+      addPreview.style.display = 'none';
+      return;
+    }
+
+    addLookupBtn.disabled = true;
+    addLookupBtn.textContent = 'Определяю…';
+    addStatus.textContent = '';
+    addStatus.className = 'add-status';
+
+    try {
+      let pinyinVal = '';
+      if (typeof pinyinPro !== 'undefined') {
+        pinyinVal = pinyinPro.pinyin(charVal, { toneType: 'symbol', type: 'array' }).join('');
+      }
+
+      let translationVal = '';
+      try {
+        const apiUrl = 'https://api.mymemory.translated.net/get?q=' + encodeURIComponent(charVal) + '&langpair=zh-CN|ru';
+        const resp = await fetch(apiUrl);
+        const data = await resp.json();
+        if (data && data.responseData && data.responseData.translatedText) {
+          translationVal = data.responseData.translatedText;
+        }
+      } catch (e) {
+        console.log('Translation API error:', e);
+      }
+
+      addPinyinInput.value = pinyinVal || '';
+      addTranslationInput.value = translationVal || '';
+      addPreview.style.display = 'flex';
+
+      if (!pinyinVal && !translationVal) {
+        addStatus.textContent = 'Не удалось определить автоматически — заполните поля вручную.';
+        addStatus.className = 'add-status error';
+      } else if (!pinyinVal) {
+        addStatus.textContent = 'Пиньинь не определён — заполните вручную.';
+        addStatus.className = 'add-status error';
+      } else if (!translationVal) {
+        addStatus.textContent = 'Перевод не получен — заполните вручную.';
+        addStatus.className = 'add-status error';
+      } else {
+        addStatus.textContent = 'Проверьте и при необходимости отредактируйте поля.';
+        addStatus.className = 'add-status loading';
+      }
+      addPinyinInput.focus();
+    } catch (e) {
+      addStatus.textContent = 'Ошибка: ' + e.message;
+      addStatus.className = 'add-status error';
+      addPreview.style.display = 'none';
+    } finally {
+      addLookupBtn.disabled = false;
+      addLookupBtn.textContent = 'Определить';
+    }
     return;
   }
 
-  // Check if already in dictionary
-  const existing = dictionary.find(d => d.char === charVal);
-  if (existing) {
-    addStatus.textContent = 'Это слово уже есть в словаре: ' + existing.pinyin + ' — ' + existing.translation;
-    addStatus.className = 'add-status error';
-    addPreview.style.display = 'none';
-    return;
-  }
-
+  // Russian (or non-Chinese) input — translate ru -> zh and show options
   addLookupBtn.disabled = true;
   addLookupBtn.textContent = 'Определяю…';
   addStatus.textContent = '';
   addStatus.className = 'add-status';
+  addPreview.style.display = 'none';
 
   try {
-    // 1. Get pinyin from pinyin-pro
-    let pinyinVal = '';
-    if (typeof pinyinPro !== 'undefined') {
-      pinyinVal = pinyinPro.pinyin(charVal, { toneType: 'symbol', type: 'array' }).join('');
-    }
+    // Translate Russian -> Chinese via MyMemory API
+    const apiUrl = 'https://api.mymemory.translated.net/get?q=' + encodeURIComponent(charVal) + '&langpair=ru|zh-CN';
+    const resp = await fetch(apiUrl);
+    const data = await resp.json();
 
-    // 2. Get translation from MyMemory API (zh-CN -> ru)
-    let translationVal = '';
-    try {
-      const apiUrl = 'https://api.mymemory.translated.net/get?q=' + encodeURIComponent(charVal) + '&langpair=zh-CN|ru';
-      const resp = await fetch(apiUrl);
-      const data = await resp.json();
-      if (data && data.responseData && data.responseData.translatedText) {
-        translationVal = data.responseData.translatedText;
+    // Collect unique Chinese translations
+    const candidates = [];
+    const seen = new Set();
+
+    // Main translation
+    if (data && data.responseData && data.responseData.translatedText) {
+      const mainText = data.responseData.translatedText;
+      // Split on common separators to get individual words
+      const parts = mainText.split(/[\u4e00-\u9fff]+|[^\u4e00-\u9fff]+/).filter(p => /[\u4e00-\u9fff]/.test(p));
+      // Actually let's use a simpler approach: extract Chinese character sequences
+      const chineseParts = mainText.match(/[\u4e00-\u9fff]+/g) || [];
+      for (const p of chineseParts) {
+        if (!seen.has(p)) { seen.add(p); candidates.push(p); }
       }
-    } catch (e) {
-      console.log('Translation API error:', e);
     }
 
-    // 3. Show preview with editable fields
-    addPinyinInput.value = pinyinVal || '';
-    addTranslationInput.value = translationVal || '';
-    addPreview.style.display = 'flex';
-
-    if (!pinyinVal && !translationVal) {
-      addStatus.textContent = 'Не удалось определить автоматически — заполните поля вручную.';
-      addStatus.className = 'add-status error';
-    } else if (!pinyinVal) {
-      addStatus.textContent = 'Пиньинь не определён — заполните вручную.';
-      addStatus.className = 'add-status error';
-    } else if (!translationVal) {
-      addStatus.textContent = 'Перевод не получен — заполните вручную.';
-      addStatus.className = 'add-status error';
-    } else {
-      addStatus.textContent = 'Проверьте и при необходимости отредактируйте поля.';
-      addStatus.className = 'add-status loading';
+    // Alternative matches from the API
+    if (data && data.matches) {
+      for (const m of data.matches) {
+        if (m && m.translation) {
+          const chineseParts = m.translation.match(/[\u4e00-\u9fff]+/g) || [];
+          for (const p of chineseParts) {
+            if (!seen.has(p)) { seen.add(p); candidates.push(p); }
+          }
+        }
+      }
     }
 
-    addPinyinInput.focus();
+    // Filter out candidates already in dictionary
+    const newCandidates = candidates.filter(c => !dictionary.find(d => d.char === c));
+
+    if (newCandidates.length === 0) {
+      if (candidates.length > 0) {
+        addStatus.textContent = 'Все найденные варианты уже есть в словаре.';
+      } else {
+        addStatus.textContent = 'Не удалось найти китайский перевод. Попробуйте ввести иероглиф вручную.';
+      }
+      addStatus.className = 'add-status error';
+      return;
+    }
+
+    // Get pinyin for each candidate
+    const optionsData = [];
+    for (const c of newCandidates) {
+      let py = '';
+      if (typeof pinyinPro !== 'undefined') {
+        py = pinyinPro.pinyin(c, { toneType: 'symbol', type: 'array' }).join('');
+      }
+      optionsData.push({ char: c, pinyin: py });
+    }
+
+    // Build options UI
+    addCharOptions.innerHTML = '';
+    const header = document.createElement('div');
+    header.className = 'opt-header';
+    header.textContent = optionsData.length === 1
+      ? 'Найден 1 вариант. Нажмите, чтобы выбрать:'
+      : 'Найдено ' + optionsData.length + ' вариантов. Выберите нужный:';
+    addCharOptions.appendChild(header);
+
+    optionsData.forEach((opt) => {
+      const div = document.createElement('div');
+      div.className = 'add-char-option';
+      div.innerHTML = '<div class="opt-char">' + opt.char + '</div>' +
+                      '<div class="opt-pinyin">' + (opt.pinyin || '—') + '</div>' +
+                      '<div class="opt-translation">' + charVal + '</div>';
+      div.addEventListener('click', function() { selectCharOption(opt.char, opt.pinyin, charVal); });
+      addCharOptions.appendChild(div);
+    });
+
+    addCharOptions.style.display = 'flex';
+    addStatus.textContent = '';
+    addStatus.className = 'add-status';
+
+    // If only one option, auto-select it
+    if (optionsData.length === 1) {
+      selectCharOption(optionsData[0].char, optionsData[0].pinyin, charVal);
+    }
   } catch (e) {
     addStatus.textContent = 'Ошибка: ' + e.message;
     addStatus.className = 'add-status error';
@@ -945,6 +1113,26 @@ async function lookupWord() {
     addLookupBtn.disabled = false;
     addLookupBtn.textContent = 'Определить';
   }
+}
+
+function selectCharOption(charVal, pinyinVal, russianVal) {
+  // Mark selected option
+  document.querySelectorAll('.add-char-option').forEach(function(el) { el.classList.remove('selected'); });
+
+  // Set the char input to the selected Chinese character
+  addCharInput.value = charVal;
+
+  // Fill pinyin and translation
+  addPinyinInput.value = pinyinVal || '';
+  addTranslationInput.value = russianVal || '';
+
+  // Show the preview form
+  addPreview.style.display = 'flex';
+  addCharOptions.style.display = 'none';
+
+  addStatus.textContent = 'Проверьте и при необходимости отредактируйте поля.';
+  addStatus.className = 'add-status loading';
+  addPinyinInput.focus();
 }
 
 async function confirmAddWord() {
@@ -956,6 +1144,15 @@ async function confirmAddWord() {
   if (!pinyinVal) { addStatus.textContent = 'Введите пиньинь'; addStatus.className = 'add-status error'; return; }
   if (!translationVal) { addStatus.textContent = 'Введите перевод'; addStatus.className = 'add-status error'; return; }
 
+  // Проверка на дубликат в локальном словаре
+  const existingWord = dictionary.find(d => d.char === charVal);
+  if (existingWord) {
+    addStatus.textContent = 'Это слово уже есть в словаре: ' + existingWord.pinyin + ' — ' + existingWord.translation;
+    addStatus.className = 'add-status error';
+    addPreview.style.display = 'none';
+    return;
+  }
+
   addConfirmBtn.disabled = true;
   addConfirmBtn.textContent = 'Добавляю…';
   addStatus.textContent = 'Сохранение на сервере…';
@@ -963,22 +1160,25 @@ async function confirmAddWord() {
 
   let serverSaved = false;
 
-  // Try to save on server
-  try {
-    const formData = new FormData();
-    formData.append('char', charVal);
-    formData.append('pinyin', pinyinVal);
-    formData.append('translation', translationVal);
-
-    const resp = await fetch(SAVE_ENDPOINT, { method: 'POST', body: formData });
-    if (resp.ok) {
-      const text = await resp.text();
-      if (text.includes('OK') || text.includes('ok') || text.includes('success')) {
-        serverSaved = true;
+  // Сохранение на сервер через GitHub API
+  if (GITHUB_CONFIG.token && GITHUB_CONFIG.owner && GITHUB_CONFIG.repo) {
+    try {
+      const fileData = await fetchCustomWordsFile();
+      // Проверка на дубликат на сервере
+      if (fileData.words.find(w => w.char === charVal)) {
+        addStatus.textContent = 'Это слово уже есть на сервере.';
+        addStatus.className = 'add-status error';
+        addPreview.style.display = 'none';
+        addConfirmBtn.disabled = false;
+        addConfirmBtn.textContent = 'Добавить в словарь';
+        return;
       }
+      fileData.words.push({ char: charVal, pinyin: pinyinVal, translation: translationVal });
+      await saveCustomWordsFile(fileData.words, fileData.sha);
+      serverSaved = true;
+    } catch (e) {
+      console.log('Server save error:', e);
     }
-  } catch (e) {
-    console.log('Server save error:', e);
   }
 
   // Add to local dictionary regardless (so it's immediately usable)
@@ -986,9 +1186,9 @@ async function confirmAddWord() {
 
   // Save to localStorage as backup
   try {
-    let localWords = JSON.parse(localStorage.getItem('baozi_custom_words') || '[]');
+    let localWords = JSON.parse(localStorage.getItem('BAOZI_custom_words') || '[]');
     localWords.push({ char: charVal, pinyin: pinyinVal, translation: translationVal });
-    localStorage.setItem('baozi_custom_words', JSON.stringify(localWords));
+    localStorage.setItem('BAOZI_custom_words', JSON.stringify(localWords));
   } catch (e) {}
 
   // Refresh dictionary display
@@ -1016,20 +1216,62 @@ async function confirmAddWord() {
     addStatus.className = 'add-status';
   }, 2500);
 }
+// On page load: load custom words from server, migrate localStorage words
+(async function loadCustomWords() {
+  // 1. Load words from GitHub server
+  if (GITHUB_CONFIG.token && GITHUB_CONFIG.owner && GITHUB_CONFIG.repo) {
+    try {
+      const fileData = await fetchCustomWordsFile();
+      fileData.words.forEach(w => {
+        if (!dictionary.find(d => d.char === w.char)) {
+          dictionary.push(w);
+        }
+      });
+    } catch (e) {
+      console.log('Failed to load server custom words:', e);
+    }
+  }
 
-// On page load, merge any localStorage custom words into dictionary
-(function loadCustomWords() {
+  // 2. Merge localStorage words into dictionary and upload to server
   try {
-    const localWords = JSON.parse(localStorage.getItem('baozi_custom_words') || '[]');
-    localWords.forEach(w => {
-      if (!dictionary.find(d => d.char === w.char)) {
-        dictionary.push(w);
+    const localWords = JSON.parse(localStorage.getItem('BAOZI_custom_words') || '[]');
+    if (localWords.length > 0) {
+      // Add local words not yet in dictionary
+      const wordsToUpload = [];
+      localWords.forEach(w => {
+        if (!dictionary.find(d => d.char === w.char)) {
+          dictionary.push(w);
+          wordsToUpload.push(w);
+        }
+      });
+
+      // Upload local words to server if any are new
+      if (wordsToUpload.length > 0 && GITHUB_CONFIG.token && GITHUB_CONFIG.owner && GITHUB_CONFIG.repo) {
+        try {
+          const fileData = await fetchCustomWordsFile();
+          const allWords = [...fileData.words];
+          wordsToUpload.forEach(w => {
+            if (!allWords.find(s => s.char === w.char)) {
+              allWords.push(w);
+            }
+          });
+          await saveCustomWordsFile(allWords, fileData.sha);
+          // Clear localStorage after successful upload
+          localStorage.removeItem('BAOZI_custom_words');
+        } catch (e) {
+          console.log('Failed to upload local words to server:', e);
+        }
+      } else if (wordsToUpload.length === 0) {
+        // All local words already in dictionary/server — clear localStorage
+        localStorage.removeItem('BAOZI_custom_words');
       }
-    });
-    // Refresh display
-    renderDictResults(dictionary);
+    }
   } catch (e) {}
+
+  // Refresh display
+  renderDictResults(dictionary);
 })();
+;
 
 
 // === TAB 8: Имена ===
