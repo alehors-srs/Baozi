@@ -857,65 +857,9 @@ const addConfirmBtn = document.getElementById('add-confirm-btn');
 const addCancelBtn = document.getElementById('add-cancel-btn');
 const addStatus = document.getElementById('add-status');
 
-// === GitHub API configuration ===
-// Заполните эти значения для сохранения слов на сервере GitHub.
-// Создайте Personal Access Token: Settings → Developer settings → Personal access tokens → Fine-grained tokens
-// Дайте токену права: Contents — Read and write (для вашего репозитория)
-const GITHUB_CONFIG = {
-  token: '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',
-  owner: 'alehors-srs',
-  repo: 'Baozi',
-  branch: 'main',
-  filePath: 'custom_words.json'
-};
-
-// Вспомогательные функции для base64 и UTF-8
-function utf8ToBase64(str) {
-  const bytes = new TextEncoder().encode(str);
-  let binary = '';
-  bytes.forEach(byte => binary += String.fromCharCode(byte));
-  return btoa(binary);
-}
-function base64ToUtf8(b64) {
-  const binary = atob(b64);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-  return new TextDecoder().decode(bytes);
-}
-
-// Загрузить файл custom_words.json с GitHub API (с обходом кэша)
-async function fetchCustomWordsFile() {
-  const url = 'https://api.github.com/repos/' + GITHUB_CONFIG.owner + '/' + GITHUB_CONFIG.repo + '/contents/' + GITHUB_CONFIG.filePath;
-  const resp = await fetch(url + '?t=' + Date.now(), {
-    headers: { 'Authorization': 'Bearer ' + GITHUB_CONFIG.token, 'Accept': 'application/vnd.github.v3+json' }
-  });
-  if (resp.status === 404) return { words: [], sha: null };
-  if (!resp.ok) throw new Error('GitHub API error: ' + resp.status);
-  const data = await resp.json();
-  const fileContent = data.content ? base64ToUtf8(data.content.replace(/\n/g, '')) : '[]';
-  return { words: JSON.parse(fileContent), sha: data.sha };
-}
-
-// Сохранить файл custom_words.json на GitHub
-async function saveCustomWordsFile(words, sha) {
-  const url = 'https://api.github.com/repos/' + GITHUB_CONFIG.owner + '/' + GITHUB_CONFIG.repo + '/contents/' + GITHUB_CONFIG.filePath;
-  const body = {
-    message: 'Update custom words (' + new Date().toISOString() + ')',
-    content: utf8ToBase64(JSON.stringify(words, null, 2)),
-    branch: GITHUB_CONFIG.branch
-  };
-  if (sha) body.sha = sha;
-  const resp = await fetch(url, {
-    method: 'PUT',
-    headers: { 'Authorization': 'Bearer ' + GITHUB_CONFIG.token, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
-  });
-  if (!resp.ok) {
-    const err = await resp.json().catch(() => ({}));
-    throw new Error('GitHub API error: ' + resp.status + ' ' + (err.message || ''));
-  }
-  return resp.json();
-}
+// Determine the server endpoint for saving words.
+// Tries save_word.php (same directory). Falls back to localStorage-only if server is unavailable.
+const SAVE_ENDPOINT = 'save_word.php';
 
 addLookupBtn.addEventListener('click', lookupWord);
 addCharInput.addEventListener('keydown', e => {
@@ -1144,7 +1088,7 @@ async function confirmAddWord() {
   if (!pinyinVal) { addStatus.textContent = 'Введите пиньинь'; addStatus.className = 'add-status error'; return; }
   if (!translationVal) { addStatus.textContent = 'Введите перевод'; addStatus.className = 'add-status error'; return; }
 
-  // Проверка на дубликат в локальном словаре
+  // Проверка на дубликат
   const existingWord = dictionary.find(d => d.char === charVal);
   if (existingWord) {
     addStatus.textContent = 'Это слово уже есть в словаре: ' + existingWord.pinyin + ' — ' + existingWord.translation;
@@ -1160,25 +1104,22 @@ async function confirmAddWord() {
 
   let serverSaved = false;
 
-  // Сохранение на сервер через GitHub API
-  if (GITHUB_CONFIG.token && GITHUB_CONFIG.owner && GITHUB_CONFIG.repo) {
-    try {
-      const fileData = await fetchCustomWordsFile();
-      // Проверка на дубликат на сервере
-      if (fileData.words.find(w => w.char === charVal)) {
-        addStatus.textContent = 'Это слово уже есть на сервере.';
-        addStatus.className = 'add-status error';
-        addPreview.style.display = 'none';
-        addConfirmBtn.disabled = false;
-        addConfirmBtn.textContent = 'Добавить в словарь';
-        return;
+  // Try to save on server
+  try {
+    const formData = new FormData();
+    formData.append('char', charVal);
+    formData.append('pinyin', pinyinVal);
+    formData.append('translation', translationVal);
+
+    const resp = await fetch(SAVE_ENDPOINT, { method: 'POST', body: formData });
+    if (resp.ok) {
+      const text = await resp.text();
+      if (text.includes('OK') || text.includes('ok') || text.includes('success')) {
+        serverSaved = true;
       }
-      fileData.words.push({ char: charVal, pinyin: pinyinVal, translation: translationVal });
-      await saveCustomWordsFile(fileData.words, fileData.sha);
-      serverSaved = true;
-    } catch (e) {
-      console.log('Server save error:', e);
     }
+  } catch (e) {
+    console.log('Server save error:', e);
   }
 
   // Add to local dictionary regardless (so it's immediately usable)
@@ -1216,62 +1157,20 @@ async function confirmAddWord() {
     addStatus.className = 'add-status';
   }, 2500);
 }
-// On page load: load custom words from server, migrate localStorage words
-(async function loadCustomWords() {
-  // 1. Load words from GitHub server
-  if (GITHUB_CONFIG.token && GITHUB_CONFIG.owner && GITHUB_CONFIG.repo) {
-    try {
-      const fileData = await fetchCustomWordsFile();
-      fileData.words.forEach(w => {
-        if (!dictionary.find(d => d.char === w.char)) {
-          dictionary.push(w);
-        }
-      });
-    } catch (e) {
-      console.log('Failed to load server custom words:', e);
-    }
-  }
 
-  // 2. Merge localStorage words into dictionary and upload to server
+// On page load, merge any localStorage custom words into dictionary
+(function loadCustomWords() {
   try {
     const localWords = JSON.parse(localStorage.getItem('BAOZI_custom_words') || '[]');
-    if (localWords.length > 0) {
-      // Add local words not yet in dictionary
-      const wordsToUpload = [];
-      localWords.forEach(w => {
-        if (!dictionary.find(d => d.char === w.char)) {
-          dictionary.push(w);
-          wordsToUpload.push(w);
-        }
-      });
-
-      // Upload local words to server if any are new
-      if (wordsToUpload.length > 0 && GITHUB_CONFIG.token && GITHUB_CONFIG.owner && GITHUB_CONFIG.repo) {
-        try {
-          const fileData = await fetchCustomWordsFile();
-          const allWords = [...fileData.words];
-          wordsToUpload.forEach(w => {
-            if (!allWords.find(s => s.char === w.char)) {
-              allWords.push(w);
-            }
-          });
-          await saveCustomWordsFile(allWords, fileData.sha);
-          // Clear localStorage after successful upload
-          localStorage.removeItem('BAOZI_custom_words');
-        } catch (e) {
-          console.log('Failed to upload local words to server:', e);
-        }
-      } else if (wordsToUpload.length === 0) {
-        // All local words already in dictionary/server — clear localStorage
-        localStorage.removeItem('BAOZI_custom_words');
+    localWords.forEach(w => {
+      if (!dictionary.find(d => d.char === w.char)) {
+        dictionary.push(w);
       }
-    }
+    });
+    // Refresh display
+    renderDictResults(dictionary);
   } catch (e) {}
-
-  // Refresh display
-  renderDictResults(dictionary);
 })();
-;
 
 
 // === TAB 8: Имена ===
