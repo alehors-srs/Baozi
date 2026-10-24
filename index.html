@@ -3,16 +3,20 @@
 <head>
   <script>
 fetch('words.json')
-  .then(response => response.json())
-  .then(data => {
-    // Здесь работаете с данными
-    console.log(data);
+  .then(response => {
+    if (!response.ok) {
+      throw new Error('Ошибка сети или сервера');
+    }
+    return response.json();
   })
-  .catch(error => console.error('Ошибка:', error));
-  }
-};
-xhr.send();
-</script>
+  .then(data => {
+    console.log(data);
+    // Здесь ваш код обработки данных
+  })
+  .catch(error => {
+    console.error('Произошла ошибка:', error);
+  });
+  </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#f0f4f8">
