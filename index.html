@@ -1,6 +1,18 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
+  <script>
+fetch('words.json')
+  .then(response => response.json())
+  .then(data => {
+    // Здесь работаете с данными
+    console.log(data);
+  })
+  .catch(error => console.error('Ошибка:', error));
+  }
+};
+xhr.send();
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#f0f4f8">
@@ -342,7 +354,6 @@
 
 
 <!-- Load dictionary from external file (works with file:// protocol) -->
-<script src="words.json"></script>
 <script src="names.js"></script>
 <script>
 // Check if dictionary loaded
