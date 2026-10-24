@@ -1,6 +1,6 @@
 // Словарь для тренажёра иероглифов
 // Сгенерировано из Excel-файла.
-window.dictionary = [
+[
   {
     "char": "你",
     "pinyin": "nĭ",
@@ -885,5 +885,10 @@ window.dictionary = [
     "char": "幺",
     "pinyin": "yāo",
     "translation": "один, 1, в номере телефона"
+  }
+  {
+    "char": "猫",
+    "pinyin": "māo",
+    "translation": "кошка, кот"
   }
 ]
