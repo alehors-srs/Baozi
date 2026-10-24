@@ -342,12 +342,12 @@
 
 
 <!-- Load dictionary from external file (works with file:// protocol) -->
-<script src="words.js"></script>
+<script src="words.json"></script>
 <script src="names.js"></script>
 <script>
 // Check if dictionary loaded
 if (!window.dictionary) {
-  document.body.innerHTML = '<div class="loading">Ошибка: файл words.js не найден. Убедитесь, что words.js лежит рядом с index.html.</div>';
+  document.body.innerHTML = '<div class="loading">Ошибка: файл words.json не найден. Убедитесь, что words.json лежит рядом с index.html.</div>';
 }
 
 const dictionary = window.dictionary;
