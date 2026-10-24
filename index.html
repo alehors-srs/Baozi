@@ -1,22 +1,6 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <script>
-fetch('words.json')
-  .then(response => {
-    if (!response.ok) {
-      throw new Error('Ошибка сети или сервера');
-    }
-    return response.json();
-  })
-  .then(data => {
-    console.log(data);
-    // Здесь ваш код обработки данных
-  })
-  .catch(error => {
-    console.error('Произошла ошибка:', error);
-  });
-  </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#f0f4f8">
@@ -358,11 +342,12 @@ fetch('words.json')
 
 
 <!-- Load dictionary from external file (works with file:// protocol) -->
+<script src="words.js"></script>
 <script src="names.js"></script>
 <script>
 // Check if dictionary loaded
 if (!window.dictionary) {
-  document.body.innerHTML = '<div class="loading">Ошибка: файл words.json не найден. Убедитесь, что words.json лежит рядом с index.html.</div>';
+  document.body.innerHTML = '<div class="loading">Ошибка: файл words.js не найден. Убедитесь, что words.js лежит рядом с index.html.</div>';
 }
 
 const dictionary = window.dictionary;
