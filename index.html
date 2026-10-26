@@ -352,6 +352,14 @@ if (!window.dictionary) {
 
 const dictionary = window.dictionary;
 
+// Exact duplicate means all three fields match.
+function isExactWordMatch(a, b) {
+  return !!a && !!b &&
+    a.char === b.char &&
+    a.pinyin === b.pinyin &&
+    a.translation === b.translation;
+}
+
 // === RESPONSIVEVOICE TTS ===
 function speakChinese(text) {
   if (typeof responsiveVoice !== 'undefined') {
@@ -1088,8 +1096,9 @@ async function confirmAddWord() {
   if (!pinyinVal) { addStatus.textContent = 'Введите пиньинь'; addStatus.className = 'add-status error'; return; }
   if (!translationVal) { addStatus.textContent = 'Введите перевод'; addStatus.className = 'add-status error'; return; }
 
-  // Проверка на дубликат
-  const existingWord = dictionary.find(d => d.char === charVal);
+  // Проверка полного совпадения по иероглифам, пиньиню и переводу
+  const candidateWord = { char: charVal, pinyin: pinyinVal, translation: translationVal };
+  const existingWord = dictionary.find(d => isExactWordMatch(d, candidateWord));
   if (existingWord) {
     addStatus.textContent = 'Это слово уже есть в словаре: ' + existingWord.pinyin + ' — ' + existingWord.translation;
     addStatus.className = 'add-status error';
@@ -1158,18 +1167,36 @@ async function confirmAddWord() {
   }, 2500);
 }
 
-// On page load, merge any localStorage custom words into dictionary
+// On page load, remove exact duplicates from localStorage and merge remaining custom words.
 (function loadCustomWords() {
   try {
-    const localWords = JSON.parse(localStorage.getItem('BAOZI_custom_words') || '[]');
-    localWords.forEach(w => {
-      if (!dictionary.find(d => d.char === w.char)) {
+    const storedWords = JSON.parse(localStorage.getItem('BAOZI_custom_words') || '[]');
+    if (!Array.isArray(storedWords)) return;
+
+    const localWords = [];
+    storedWords.forEach(w => {
+      if (!w || typeof w.char !== 'string' ||
+          typeof w.pinyin !== 'string' ||
+          typeof w.translation !== 'string') {
+        return;
+      }
+
+      // Words already present in words.js are authoritative; remove their exact
+      // duplicates from localStorage. Also remove repeated entries within localStorage.
+      const existsInDictionary = dictionary.some(d => isExactWordMatch(d, w));
+      const existsInLocalWords = localWords.some(d => isExactWordMatch(d, w));
+      if (!existsInDictionary && !existsInLocalWords) {
+        localWords.push(w);
         dictionary.push(w);
       }
     });
-    // Refresh display
+
+    // Persist the cleaned list so duplicates stay removed on future visits.
+    localStorage.setItem('BAOZI_custom_words', JSON.stringify(localWords));
     renderDictResults(dictionary);
-  } catch (e) {}
+  } catch (e) {
+    // Keep the page usable if localStorage is unavailable or contains invalid JSON.
+  }
 })();
 
 
