@@ -900,5 +900,10 @@ window.dictionary = [
     "char": "医生",
     "pinyin": "yīshēng",
     "translation": "​доктор, врач"
+  },
+  {
+    "char": "​猫",
+    "pinyin": "māo",
+    "translation": "​кошка, кот"
   }
 ];
