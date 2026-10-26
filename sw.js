@@ -1,5 +1,5 @@
 // BAOZI Service Worker — офлайн-кеширование
-const CACHE_NAME = 'baozi-v1';
+const CACHE_NAME = 'baozi-v2';
 const CACHE_URLS = [
   'index.html',
   'manifest.json',
