@@ -904,16 +904,7 @@ async function lookupWord() {
   addCharOptions.style.display = 'none';
   addCharOptions.innerHTML = '';
 
-  if (isChineseInput) {
-    // Chinese input — original flow
-    const existing = dictionary.find(d => d.char === charVal);
-    if (existing) {
-      addStatus.textContent = 'Это слово уже есть в словаре: ' + existing.pinyin + ' — ' + existing.translation;
-      addStatus.className = 'add-status error';
-      addPreview.style.display = 'none';
-      return;
-    }
-
+  
     addLookupBtn.disabled = true;
     addLookupBtn.textContent = 'Определяю…';
     addStatus.textContent = '';
