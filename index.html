@@ -356,9 +356,13 @@ const dictionary = window.dictionary;
 function normalizeWordField(value) {
   return String(value ?? '')
     .normalize('NFC')
-    .trim()
+    // Удаляем невидимые символы Unicode
+    .replace(/[\u200B-\u200D\u2060\uFEFF\u00AD]/g, '')
+    // Приводим пробелы к единому виду
     .replace(/\s+/g, ' ')
-    .toLocaleLowerCase('ru-RU');
+    .trim()
+    // Игнорируем регистр
+    .toLowerCase();
 }
 
 // В словаре встречается старое написание тона breve (nĭ),
