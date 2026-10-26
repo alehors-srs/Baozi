@@ -352,19 +352,31 @@ if (!window.dictionary) {
 
 const dictionary = window.dictionary;
 
-// Exact duplicate means all three fields match.
+// Сравниваем записи независимо от регистра, лишних пробелов и формы Unicode.
 function normalizeWordField(value) {
   return String(value ?? '')
     .normalize('NFC')
     .trim()
     .replace(/\s+/g, ' ')
-    .toLowerCase();
+    .toLocaleLowerCase('ru-RU');
+}
+
+// В словаре встречается старое написание тона breve (nĭ),
+// а pinyin-pro может вернуть caron (nǐ). Для сравнения это один тон.
+function normalizeWordPinyin(value) {
+  return normalizeWordField(value)
+    .replace(/ă/g, 'ǎ')
+    .replace(/ĕ/g, 'ě')
+    .replace(/ĭ/g, 'ǐ')
+    .replace(/ŏ/g, 'ǒ')
+    .replace(/ŭ/g, 'ǔ')
+    .normalize('NFC');
 }
 
 function isExactWordMatch(a, b) {
   return !!a && !!b &&
     normalizeWordField(a.char) === normalizeWordField(b.char) &&
-    normalizeWordField(a.pinyin) === normalizeWordField(b.pinyin) &&
+    normalizeWordPinyin(a.pinyin) === normalizeWordPinyin(b.pinyin) &&
     normalizeWordField(a.translation) === normalizeWordField(b.translation);
 }
 
