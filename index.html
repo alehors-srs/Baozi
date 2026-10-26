@@ -904,7 +904,7 @@ async function lookupWord() {
   addCharOptions.style.display = 'none';
   addCharOptions.innerHTML = '';
 
-  
+if (isChineseInput) {  
     addLookupBtn.disabled = true;
     addLookupBtn.textContent = 'Определяю…';
     addStatus.textContent = '';
