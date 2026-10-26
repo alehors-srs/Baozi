@@ -353,11 +353,19 @@ if (!window.dictionary) {
 const dictionary = window.dictionary;
 
 // Exact duplicate means all three fields match.
+function normalizeWordField(value) {
+  return String(value ?? '')
+    .normalize('NFC')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .toLowerCase();
+}
+
 function isExactWordMatch(a, b) {
   return !!a && !!b &&
-    a.char === b.char &&
-    a.pinyin === b.pinyin &&
-    a.translation === b.translation;
+    normalizeWordField(a.char) === normalizeWordField(b.char) &&
+    normalizeWordField(a.pinyin) === normalizeWordField(b.pinyin) &&
+    normalizeWordField(a.translation) === normalizeWordField(b.translation);
 }
 
 // === RESPONSIVEVOICE TTS ===
@@ -904,7 +912,9 @@ async function lookupWord() {
   addCharOptions.style.display = 'none';
   addCharOptions.innerHTML = '';
 
-if (isChineseInput) {  
+  if (isChineseInput) {
+    // Проверяем полное совпадение только после заполнения пиньиня и перевода.
+
     addLookupBtn.disabled = true;
     addLookupBtn.textContent = 'Определяю…';
     addStatus.textContent = '';
@@ -998,8 +1008,8 @@ if (isChineseInput) {
       }
     }
 
-    // Filter out candidates already in dictionary
-    const newCandidates = candidates.filter(c => !dictionary.find(d => d.char === c));
+    // Сохраняем варианты с существующим иероглифом: перевод может отличаться.
+    const newCandidates = candidates;
 
     if (newCandidates.length === 0) {
       if (candidates.length > 0) {
@@ -1093,7 +1103,7 @@ async function confirmAddWord() {
   if (existingWord) {
     addStatus.textContent = 'Это слово уже есть в словаре: ' + existingWord.pinyin + ' — ' + existingWord.translation;
     addStatus.className = 'add-status error';
-    addPreview.style.display = 'none';
+    // Не закрываем форму: можно уточнить перевод или пиньинь.
     return;
   }
 
@@ -1122,15 +1132,23 @@ async function confirmAddWord() {
     console.log('Server save error:', e);
   }
 
-  // Add to local dictionary regardless (so it's immediately usable)
-  dictionary.push({ char: charVal, pinyin: pinyinVal, translation: translationVal });
+  // Добавляем запись в рабочий словарь независимо от состояния сервера.
+  dictionary.push(candidateWord);
 
-  // Save to localStorage as backup
+  // Держим локальную копию до появления записи в обновлённом words.js.
   try {
-    let localWords = JSON.parse(localStorage.getItem('BAOZI_custom_words') || '[]');
-    localWords.push({ char: charVal, pinyin: pinyinVal, translation: translationVal });
-    localStorage.setItem('BAOZI_custom_words', JSON.stringify(localWords));
-  } catch (e) {}
+    const storageKey = 'BAOZI_custom_words';
+    const stored = JSON.parse(localStorage.getItem(storageKey) || '[]');
+    const localWords = Array.isArray(stored) ? stored : [];
+
+    if (!localWords.some(w => isExactWordMatch(w, candidateWord))) {
+      localWords.push(candidateWord);
+    }
+
+    localStorage.setItem(storageKey, JSON.stringify(localWords));
+  } catch (e) {
+    console.error('Ошибка сохранения слова:', e);
+  }
 
   // Refresh dictionary display
   const currentSearch = document.getElementById('dict-search').value;
@@ -1160,33 +1178,60 @@ async function confirmAddWord() {
 
 // On page load, remove exact duplicates from localStorage and merge remaining custom words.
 (function loadCustomWords() {
+  const storageKey = 'BAOZI_custom_words';
+
   try {
-    const storedWords = JSON.parse(localStorage.getItem('BAOZI_custom_words') || '[]');
-    if (!Array.isArray(storedWords)) return;
+    const storedWords = JSON.parse(
+      localStorage.getItem(storageKey) || '[]'
+    );
+
+    if (!Array.isArray(storedWords)) {
+      console.warn('Неверный формат словаря localStorage');
+      return;
+    }
 
     const localWords = [];
-    storedWords.forEach(w => {
-      if (!w || typeof w.char !== 'string' ||
-          typeof w.pinyin !== 'string' ||
-          typeof w.translation !== 'string') {
-        return;
+    let removed = 0;
+
+    for (const word of storedWords) {
+      if (
+        !word ||
+        typeof word.char !== 'string' ||
+        typeof word.pinyin !== 'string' ||
+        typeof word.translation !== 'string' ||
+        !word.char.trim() ||
+        !word.pinyin.trim() ||
+        !word.translation.trim()
+      ) {
+        removed++;
+        continue;
       }
 
-      // Words already present in words.js are authoritative; remove their exact
-      // duplicates from localStorage. Also remove repeated entries within localStorage.
-      const existsInDictionary = dictionary.some(d => isExactWordMatch(d, w));
-      const existsInLocalWords = localWords.some(d => isExactWordMatch(d, w));
-      if (!existsInDictionary && !existsInLocalWords) {
-        localWords.push(w);
-        dictionary.push(w);
-      }
-    });
+      // dictionary уже содержит words.js и ранее принятые локальные слова.
+      const duplicate = dictionary.some(d =>
+        isExactWordMatch(d, word)
+      );
 
-    // Persist the cleaned list so duplicates stay removed on future visits.
-    localStorage.setItem('BAOZI_custom_words', JSON.stringify(localWords));
+      if (duplicate) {
+        removed++;
+        continue;
+      }
+
+      localWords.push(word);
+      dictionary.push(word);
+    }
+
+    localStorage.setItem(storageKey, JSON.stringify(localWords));
+
+    console.log(
+      'BAOZI: локальный словарь очищен.',
+      'Удалено:', removed,
+      'Осталось:', localWords.length
+    );
+
     renderDictResults(dictionary);
   } catch (e) {
-    // Keep the page usable if localStorage is unavailable or contains invalid JSON.
+    console.error('Ошибка очистки localStorage:', e);
   }
 })();
 
