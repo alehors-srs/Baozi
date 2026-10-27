@@ -53,6 +53,15 @@
   .score-orange { color: #e67e22; }
   .score-red { color: #e74c3c; }
   
+  /* Локальный шрифт для названий разделов */
+@font-face {
+  font-family: 'Reggae One';
+  src: url('fonts/ReggaeOne-Regular.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
   /* Tabs */
 .tabs {
   display: grid;
@@ -70,22 +79,37 @@
   aspect-ratio: 1;
   padding: 12px;
   font-size: clamp(15px, 2.5vw, 20px);
-  font-weight: 600;
+  font-family: 'Reggae One', 'Segoe UI', Arial, sans-serif;
+  font-weight: 400;
   text-align: center;
-  overflow-wrap: anywhere;
-  border: 2px solid #d0d5db;
+  white-space: nowrap;
+  overflow-wrap: normal;
+  border: 1px solid rgba(44, 62, 80, 0.30);
   border-radius: 16px;
-  background: #fff;
+  background: rgba(255, 255, 255, 0.12);
   color: #2c3e50;
   cursor: pointer;
   transition: background 0.2s, border-color 0.2s;
+}
+.tab-label {
+  display: block;
+  flex: 0 0 auto;
+  white-space: nowrap;
+  line-height: 1.4;
 }
 .tab:focus-visible {
   outline: 3px solid #3498db;
   outline-offset: 3px;
 }
-  .tab.active { background: #2c3e50; color: #fff; border-color: #2c3e50; }
-  .tab:hover:not(.active) { border-color: #3498db; }
+  .tab.active {
+    background: rgba(255, 255, 255, 0.25);
+    color: #2c3e50;
+    border-color: #385c47;
+  }
+  .tab:hover:not(.active) {
+    background: rgba(255, 255, 255, 0.20);
+    border-color: #385c47;
+  }
   .tab-content { display: none; }
   .tab-content.active { display: block; }
   
@@ -293,17 +317,17 @@ button { touch-action: manipulation; }
 
 <nav class="tabs" aria-label="Разделы тренажера">
   <button type="button" class="tab" data-tab="tab1"
-          aria-controls="tab1" aria-expanded="false">字 - АБВ</button>
+          aria-controls="tab1" aria-expanded="false"><span class="tab-label">字 - АБВ</span></button>
   <button type="button" class="tab" data-tab="tab2"
-          aria-controls="tab2" aria-expanded="false">АБВ - 字</button>
+          aria-controls="tab2" aria-expanded="false"><span class="tab-label">АБВ - 字</span></button>
   <button type="button" class="tab" data-tab="tab5"
-          aria-controls="tab5" aria-expanded="false">Последние</button>
-  <button type="button" class="tab" data-tab="tab6"
-          aria-controls="tab6" aria-expanded="false">Словарь</button>
-  <button type="button" class="tab" data-tab="tab8"
-          aria-controls="tab8" aria-expanded="false">Имена</button>
+          aria-controls="tab5" aria-expanded="false"><span class="tab-label">Последние</span></button>
   <button type="button" class="tab" data-tab="tab7"
-          aria-controls="tab7" aria-expanded="false">Тест</button>
+          aria-controls="tab7" aria-expanded="false"><span class="tab-label">Тест</span></button>
+  <button type="button" class="tab" data-tab="tab6"
+          aria-controls="tab6" aria-expanded="false"><span class="tab-label">Словарь</span></button>
+  <button type="button" class="tab" data-tab="tab8"
+          aria-controls="tab8" aria-expanded="false"><span class="tab-label">Имена</span></button>
 </nav>
 
 <!-- TAB 1: 字 - АБВ -->
@@ -537,6 +561,45 @@ function checkPinyin(user, correct) {
   if (!u) return false;
   const variants = correct.split(/[;,]/).map(v => normalizePinyin(v));
   return variants.some(v => v === u);
+}
+
+// Подгоняем названия по ширине после загрузки шрифта и изменения экрана.
+const sectionMenu = document.querySelector('.tabs');
+let sectionLabelFrame = null;
+
+function fitSectionLabels() {
+  sectionMenu.querySelectorAll('.tab').forEach(button => {
+    const label = button.querySelector('.tab-label');
+    if (!label) return;
+    label.style.fontSize = '';
+    const style = getComputedStyle(button);
+    const available = button.clientWidth
+      - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight) - 1;
+    const width = label.getBoundingClientRect().width;
+    if (available > 0 && width > available) {
+      const baseSize = parseFloat(getComputedStyle(label).fontSize);
+      label.style.fontSize = (Math.floor(baseSize * available / width * 100) / 100) + 'px';
+    }
+  });
+}
+
+function scheduleSectionLabelFit() {
+  if (sectionLabelFrame !== null) cancelAnimationFrame(sectionLabelFrame);
+  sectionLabelFrame = requestAnimationFrame(() => {
+    sectionLabelFrame = null;
+    fitSectionLabels();
+  });
+}
+
+scheduleSectionLabelFit();
+if ('ResizeObserver' in window) {
+  const sectionMenuObserver = new ResizeObserver(scheduleSectionLabelFit);
+  sectionMenuObserver.observe(sectionMenu);
+}
+window.addEventListener('resize', scheduleSectionLabelFit);
+if (document.fonts) {
+  document.fonts.ready.then(scheduleSectionLabelFit);
+  document.fonts.addEventListener('loadingdone', scheduleSectionLabelFit);
 }
 
 // === TAB SWITCHING ===
