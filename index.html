@@ -14,11 +14,17 @@
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f4f8; color: #333; min-height: 100vh; padding: 20px;
-      background-image: url("images/background.jpg");
-      background-position: center; /* центрируем картинку */
-      background-size: cover;      /* заполняем область, обрезая лишнее */
-      background-repeat: no-repeat;/* не повторяем */
+      position: relative;
+      isolation: isolate;
 }
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background: #f0f4f8 url("images/background.jpg") center / cover no-repeat;
+  }
   h1 { text-align: center; color: #2c3e50; margin-bottom: 8px; }
   .subtitle { text-align: center; color: #2c3e50; margin-bottom: 20px; font-size: 14px; }
   .stats { display: flex; justify-content: center; gap: 20px; margin-bottom: 20px; flex-wrap: wrap; }
@@ -770,7 +776,6 @@ function renderQuizCard() {
   quiz.appendChild(card);
   quiz1State.answered = false;
   const inp = card.querySelector('input');
-  inp.focus();
   inp.addEventListener('keydown', e => {
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -875,7 +880,6 @@ function renderQuiz2Card() {
   quiz.appendChild(card);
   quiz2State.answered = false;
   const inp = card.querySelector('input');
-  inp.focus();
   inp.addEventListener('keydown', e => {
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -990,7 +994,6 @@ function renderQuiz5Card() {
   quiz.appendChild(card);
   quiz5State.answered = false;
   const inp = card.querySelector('input');
-  inp.focus();
   inp.addEventListener('keydown', e => {
     if (e.key === 'Enter') {
       e.preventDefault();
