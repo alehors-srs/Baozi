@@ -54,8 +54,36 @@
   .score-red { color: #e74c3c; }
   
   /* Tabs */
-  .tabs { display: flex; justify-content: center; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
-  .tab { padding: 10px 20px; font-size: 15px; border: 2px solid #d0d5db; border-radius: 10px; background: #fff; cursor: pointer; transition: all 0.2s; }
+.tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  max-width: 540px;
+  margin: 0 auto 24px;
+}
+.tab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-width: 0;
+  aspect-ratio: 1;
+  padding: 12px;
+  font-size: clamp(15px, 2.5vw, 20px);
+  font-weight: 600;
+  text-align: center;
+  overflow-wrap: anywhere;
+  border: 2px solid #d0d5db;
+  border-radius: 16px;
+  background: #fff;
+  color: #2c3e50;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+.tab:focus-visible {
+  outline: 3px solid #3498db;
+  outline-offset: 3px;
+}
   .tab.active { background: #2c3e50; color: #fff; border-color: #2c3e50; }
   .tab:hover:not(.active) { border-color: #3498db; }
   .tab-content { display: none; }
@@ -195,6 +223,67 @@
   .add-char-option .opt-translation { font-size: 14px; color: #7f8c8d; margin-left: auto; }
   .add-char-options .opt-header { font-size: 13px; color: #2c3e50; font-weight: 600; margin-bottom: 2px; }
 
+
+/* Адаптация содержимого */
+.tab-content {
+  max-width: 900px;
+  margin-inline: auto;
+}
+button, input, select { font: inherit; }
+button { touch-action: manipulation; }
+.card-body, .dict-info, .result-translation, .add-word-field input {
+  min-width: 0;
+}
+.char, .dict-char, .dict-info, .result-char-pinyin,
+.result-translation, .test-char, .test-option {
+  overflow-wrap: anywhere;
+}
+.add-word-row input, .add-word-field input { width: 100%; }
+
+@media (max-width: 768px) {
+  body { padding: 16px; }
+  h1 { font-size: 26px; margin-bottom: 18px; }
+  .card, .sent-card, .add-word-section { padding: 18px; }
+  .test-card { padding: 24px 18px; }
+  .test-start-screen, .test-result { padding: 28px 8px; }
+  button, input, select { min-height: 44px; }
+  input, select { font-size: 16px; }
+  .speak-btn, .speak-btn-sm {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+  }
+  .hint-link { padding-block: 12px; font-size: 14px; }
+  .dict-item { flex-wrap: wrap; gap: 10px; padding: 16px; }
+  .dict-info { flex: 1 1 180px; }
+  .result-row { flex-wrap: wrap; }
+  .result-translation { flex: 1 1 150px; }
+  .test-prev-btn, .test-restart-during { margin: 4px; }
+}
+@media (max-width: 480px) {
+  body { padding: 12px; }
+  h1 { font-size: 23px; }
+  .tabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    max-width: 360px;
+  }
+  .card-top { flex-wrap: wrap; gap: 10px; }
+  .char { min-width: 0; font-size: 34px; }
+  .add-word-field {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+  }
+  .actions > button, .add-word-actions > button {
+    flex: 1 1 140px;
+    padding-inline: 12px;
+  }
+  .test-options { grid-template-columns: minmax(0, 1fr); }
+  .test-char { font-size: 48px; }
+  .test-option { padding: 14px; }
+}
+
 </style>
 <script src="https://code.responsivevoice.org/responsivevoice.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pinyin-pro/3.29.4/index.js"></script>
@@ -202,17 +291,23 @@
 <body>
 <h1>Тренировка иероглифов</h1>
 
-<div class="tabs">
-  <div class="tab active" data-tab="tab1">字 - АБВ</div>
-  <div class="tab" data-tab="tab2">АБВ - 字</div>
-  <div class="tab" data-tab="tab5">Последние</div>
-  <div class="tab" data-tab="tab6">Словарь</div>
-  <div class="tab" data-tab="tab8">Имена</div>
-  <div class="tab" data-tab="tab7">Тест</div>
-</div>
+<nav class="tabs" aria-label="Разделы тренажера">
+  <button type="button" class="tab" data-tab="tab1"
+          aria-controls="tab1" aria-expanded="false">字 - АБВ</button>
+  <button type="button" class="tab" data-tab="tab2"
+          aria-controls="tab2" aria-expanded="false">АБВ - 字</button>
+  <button type="button" class="tab" data-tab="tab5"
+          aria-controls="tab5" aria-expanded="false">Последние</button>
+  <button type="button" class="tab" data-tab="tab6"
+          aria-controls="tab6" aria-expanded="false">Словарь</button>
+  <button type="button" class="tab" data-tab="tab8"
+          aria-controls="tab8" aria-expanded="false">Имена</button>
+  <button type="button" class="tab" data-tab="tab7"
+          aria-controls="tab7" aria-expanded="false">Тест</button>
+</nav>
 
 <!-- TAB 1: 字 - АБВ -->
-<div class="tab-content active" id="tab1">
+<div class="tab-content" id="tab1">
   <p class="subtitle">Переведите 10 иероглифов на русский</p>
   <div id="result-banner"></div>
   <div id="quiz"></div>
@@ -445,12 +540,29 @@ function checkPinyin(user, correct) {
 }
 
 // === TAB SWITCHING ===
+const initializedSections = new Set();
+
 document.querySelectorAll('.tab').forEach(tab => {
   tab.addEventListener('click', () => {
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-    tab.classList.add('active');
-    document.getElementById(tab.dataset.tab).classList.add('active');
+    const sectionId = tab.dataset.tab;
+
+    document.querySelectorAll('.tab').forEach(button => {
+      const selected = button === tab;
+      button.classList.toggle('active', selected);
+      button.setAttribute('aria-expanded', String(selected));
+    });
+
+    document.querySelectorAll('.tab-content').forEach(section => {
+      section.classList.toggle('active', section.id === sectionId);
+    });
+
+    if (!initializedSections.has(sectionId)) {
+      if (sectionId === 'tab1') renderQuiz();
+      if (sectionId === 'tab2') renderQuiz2();
+      if (sectionId === 'tab5') renderQuiz5();
+
+      initializedSections.add(sectionId);
+    }
   });
 });
 
@@ -1292,10 +1404,7 @@ function confirmAddWord() {
 })();
 
 
-// Создаём раунды только после загрузки локальных слов.
-renderQuiz();
-renderQuiz2();
-renderQuiz5();
+// Тренировочные раунды создаются при первом открытии раздела.
 renderDictResults(dictionary);
 
 // === TAB 8: Имена ===
