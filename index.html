@@ -499,6 +499,7 @@ let quiz1State = { items: [], idx: 0, results: [], answered: false, transitionin
 
 function renderQuiz() {
   resetQuizTransition(quiz1State, 'next-btn');
+  document.getElementById('next-btn').style.display = '';
   quiz1State.items = shuffle(dictionary).slice(0, Math.min(10, dictionary.length));
   quiz1State.idx = 0;
   quiz1State.results = [];
@@ -516,6 +517,7 @@ function renderQuizCard() {
   quiz.innerHTML = '';
   if (quiz1State.idx >= quiz1State.items.length) {
     document.getElementById('next-btn').disabled = true;
+    document.getElementById('next-btn').style.display = 'none';
     showQuizResults(quiz1State.results, document.getElementById('result-banner'));
     return;
   }
@@ -601,6 +603,7 @@ let quiz2State = { items: [], idx: 0, results: [], answered: false, transitionin
 
 function renderQuiz2() {
   resetQuizTransition(quiz2State, 'next-btn2');
+  document.getElementById('next-btn2').style.display = '';
   quiz2State.items = shuffle(dictionary).slice(0, Math.min(10, dictionary.length));
   quiz2State.idx = 0;
   quiz2State.results = [];
@@ -618,6 +621,7 @@ function renderQuiz2Card() {
   quiz.innerHTML = '';
   if (quiz2State.idx >= quiz2State.items.length) {
     document.getElementById('next-btn2').disabled = true;
+    document.getElementById('next-btn2').style.display = 'none';
     showQuizResults(quiz2State.results, document.getElementById('result-banner2'));
     return;
   }
@@ -714,6 +718,7 @@ function updateTab5Subtitle() {
 
 function renderQuiz5() {
   resetQuizTransition(quiz5State, 'next-btn5');
+  document.getElementById('next-btn5').style.display = '';
   const pool = getLastWords();
   quiz5State.items = shuffle(pool).slice(0, Math.min(10, pool.length));
   quiz5State.idx = 0;
@@ -732,6 +737,7 @@ function renderQuiz5Card() {
   quiz.innerHTML = '';
   if (quiz5State.idx >= quiz5State.items.length) {
     document.getElementById('next-btn5').disabled = true;
+    document.getElementById('next-btn5').style.display = 'none';
     showQuizResults(quiz5State.results, document.getElementById('result-banner5'));
     return;
   }
