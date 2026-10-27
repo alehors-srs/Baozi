@@ -308,6 +308,24 @@ button { touch-action: manipulation; }
   .test-option { padding: 14px; }
 }
 
+/* Меню и форма раздела показываются по очереди. */
+.tabs[hidden], .section-navigation[hidden] { display: none; }
+.section-navigation {
+  max-width: 900px;
+  margin: 0 auto 18px;
+}
+.back-to-sections {
+  min-height: 44px;
+  padding: 10px 16px;
+  background: rgba(255, 255, 255, 0.75);
+  color: #2c3e50;
+  border: 1px solid rgba(44, 62, 80, 0.30);
+}
+.back-to-sections:focus-visible {
+  outline: 3px solid #3498db;
+  outline-offset: 3px;
+}
+
 </style>
 <script src="https://code.responsivevoice.org/responsivevoice.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pinyin-pro/3.29.4/index.js"></script>
@@ -329,6 +347,9 @@ button { touch-action: manipulation; }
   <button type="button" class="tab" data-tab="tab8"
           aria-controls="tab8" aria-expanded="false"><span class="tab-label">Имена</span></button>
 </nav>
+<div class="section-navigation" id="section-navigation" hidden>
+  <button type="button" class="back-to-sections" id="back-to-sections">← К разделам</button>
+</div>
 
 <!-- TAB 1: 字 - АБВ -->
 <div class="tab-content" id="tab1">
@@ -568,6 +589,7 @@ const sectionMenu = document.querySelector('.tabs');
 let sectionLabelFrame = null;
 
 function fitSectionLabels() {
+  if (sectionMenu.hidden) return;
   sectionMenu.querySelectorAll('.tab').forEach(button => {
     const label = button.querySelector('.tab-label');
     if (!label) return;
@@ -604,6 +626,24 @@ if (document.fonts) {
 
 // === TAB SWITCHING ===
 const initializedSections = new Set();
+const sectionNavigation = document.getElementById('section-navigation');
+const backToSectionsButton = document.getElementById('back-to-sections');
+let lastSectionButton = null;
+
+backToSectionsButton.addEventListener('click', () => {
+  document.querySelectorAll('.tab-content').forEach(section => {
+    section.classList.remove('active');
+  });
+  document.querySelectorAll('.tab').forEach(button => {
+    button.classList.remove('active');
+    button.setAttribute('aria-expanded', 'false');
+  });
+  sectionNavigation.hidden = true;
+  sectionMenu.hidden = false;
+  scheduleSectionLabelFit();
+  if (lastSectionButton) lastSectionButton.focus({ preventScroll: true });
+  window.scrollTo(0, 0);
+});
 
 document.querySelectorAll('.tab').forEach(tab => {
   tab.addEventListener('click', () => {
@@ -618,6 +658,12 @@ document.querySelectorAll('.tab').forEach(tab => {
     document.querySelectorAll('.tab-content').forEach(section => {
       section.classList.toggle('active', section.id === sectionId);
     });
+
+    lastSectionButton = tab;
+    sectionMenu.hidden = true;
+    sectionNavigation.hidden = false;
+    backToSectionsButton.focus({ preventScroll: true });
+    window.scrollTo(0, 0);
 
     if (!initializedSections.has(sectionId)) {
       if (sectionId === 'tab1') renderQuiz();
