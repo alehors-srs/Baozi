@@ -17,7 +17,7 @@ concurrency:
 jobs:
   sync-and-build:
     if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
       contents: write
@@ -25,13 +25,13 @@ jobs:
       deploy: ${{ steps.publish.outputs.deploy }}
     steps:
       - name: Check out the latest main
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: main
           fetch-depth: 1
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.12'
 
@@ -90,7 +90,7 @@ jobs:
   deploy:
     needs: sync-and-build
     if: needs.sync-and-build.outputs.deploy == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
       pages: write
