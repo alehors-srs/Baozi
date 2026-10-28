@@ -1,5 +1,4 @@
-// Словарь для тренажёра иероглифов
-// Сгенерировано из Excel-файла.
+// Generated from Google Sheets. Edit the spreadsheet, not this file.
 window.dictionary = [
   {
     "char": "你",
