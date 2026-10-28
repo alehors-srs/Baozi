@@ -1,0 +1,104 @@
+name: Sync dictionaries and deploy Baozi
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 * * * *'
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: baozi-sync-and-pages
+  cancel-in-progress: false
+
+jobs:
+  sync-and-build:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    outputs:
+      deploy: ${{ steps.publish.outputs.deploy }}
+    steps:
+      - name: Check out the latest main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Test CSV validation
+        run: python -m unittest discover -s tests -v
+
+      - name: Synchronize both dictionaries
+        run: python scripts/sync_dictionary.py
+
+      - name: Commit dictionary changes
+        id: commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add -- words.js names.js
+          if git diff --cached --quiet; then
+            echo 'changed=false' >> "$GITHUB_OUTPUT"
+          else
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git commit -m 'Update dictionaries from Google Sheets'
+            # Reject concurrent edits rather than overwrite them or deploy stale files.
+            git push origin HEAD:main
+            echo 'changed=true' >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Decide whether to publish
+        id: publish
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          DICTIONARY_CHANGED: ${{ steps.commit.outputs.changed }}
+        run: |
+          if [ "$EVENT_NAME" != 'schedule' ] || [ "$DICTIONARY_CHANGED" = 'true' ]; then
+            echo 'deploy=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'deploy=false' >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Prepare static website
+        if: steps.publish.outputs.deploy == 'true'
+        run: |
+          mkdir _site
+          cp index.html words.js names.js manifest.json sw.js _site/
+          cp -R images fonts _site/
+          if [ -f CNAME ]; then cp CNAME _site/; fi
+          if [ -f robots.txt ]; then cp robots.txt _site/; fi
+          if [ -f 404.html ]; then cp 404.html _site/; fi
+          touch _site/.nojekyll
+
+      - name: Upload website
+        if: steps.publish.outputs.deploy == 'true'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: sync-and-build
+    if: needs.sync-and-build.outputs.deploy == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
