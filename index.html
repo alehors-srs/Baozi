@@ -689,6 +689,24 @@ document.querySelectorAll('.tab').forEach(tab => {
 });
 
 // Текст словаря не интерпретируется как HTML или JavaScript.
+// Сохраняем фокус в поле при нажатии подсказки или озвучки.
+document.addEventListener('pointerdown', event => {
+  if (!event.isPrimary || event.button !== 0) return;
+  if (!(event.target instanceof Element)) return;
+
+  const control = event.target.closest('.hint-link, .speak-btn');
+  if (!control) return;
+
+  const card = control.closest('#quiz .card, #quiz2 .card, #quiz5 .card');
+  if (!card) return;
+
+  const input = card.querySelector('input');
+  if (!input || document.activeElement !== input) return;
+
+  // Не переключаем фокус; действие выполняет существующий обработчик click.
+  event.preventDefault();
+}, { passive: false });
+
 function makeElement(tag, className, text) {
   const element = document.createElement(tag);
   element.className = className;
