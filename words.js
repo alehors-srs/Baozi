@@ -884,5 +884,10 @@ window.dictionary = [
     "char": "幺",
     "pinyin": "yāo",
     "translation": "один, 1, в номере телефона"
+  },
+  {
+    "char": "猫",
+    "pinyin": "māo",
+    "translation": "кошка, кот"
   }
 ];
