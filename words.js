@@ -884,20 +884,5 @@ window.dictionary = [
     "char": "幺",
     "pinyin": "yāo",
     "translation": "один, 1, в номере телефона"
-  },
-  {
-    "char": "动弹",
-    "pinyin": "dòngtan",
-    "translation": "двигаться, шевелиться"
-  },
-  {
-    "char": "失眠症",
-    "pinyin": "shīmiánzhèng",
-    "translation": "бессонница"
-  },
-  {
-    "char": "胡萝卜",
-    "pinyin": "húluóbo",
-    "translation": "морковь, морковка"
   }
 ];
