@@ -92,7 +92,7 @@
   overflow-wrap: normal;
   border: 1px solid rgba(44, 62, 80, 0.30);
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.25);
   color: #2c3e50;
   cursor: pointer;
   transition: background 0.2s, border-color 0.2s;
@@ -108,7 +108,7 @@
   outline-offset: 3px;
 }
   .tab.active {
-    background: rgba(255, 255, 255, 0.45);
+    background: rgba(255, 255, 255, 0.35);
     color: #2c3e50;
     border-color: #385c47;
   }
@@ -319,7 +319,6 @@ button { touch-action: manipulation; }
 .section-navigation {
   max-width: 900px;
   margin: 0 auto 18px;
-  text-align: center;
 }
 .back-to-sections {
   min-height: 44px;
@@ -706,8 +705,46 @@ function resetQuizTransition(state, buttonId) {
   document.getElementById(buttonId).disabled = false;
 }
 
+// Обновляем существующую карточку, не удаляя поле ввода из документа.
+function updateQuizCardInPlace(quiz, state, focusInput, reverse = false) {
+  const card = quiz.querySelector('.card');
+  if (!card || state.idx >= state.items.length) return false;
+  const item = state.items[state.idx];
+  quiz.querySelector('.quiz-progress-text').textContent =
+    'Слово ' + (state.idx + 1) + ' из ' + state.items.length;
+  card.classList.remove('correct', 'wrong');
+  card.querySelector('.char').textContent = reverse ? item.translation : item.char;
+  const speaker = card.querySelector('.speak-btn');
+  speaker.replaceWith(makeSpeakButton(item.char, 'speak-btn'));
+  const input = card.querySelector('input');
+  input.value = '';
+  if (reverse) {
+    input.dataset.pinyin = item.pinyin;
+    input.dataset.char = item.char;
+  } else {
+    input.dataset.correct = item.translation;
+    input.dataset.pinyin = item.pinyin || '';
+  }
+  const hint = card.querySelector('.hint');
+  hint.classList.remove('show');
+  hint.textContent = reverse
+    ? 'Пиньинь: ' + item.pinyin + ' | Иероглиф: ' + item.char
+    : 'Пиньинь: ' + (item.pinyin || '—') + ' | Перевод: ' + item.translation;
+  card.querySelector('.hint-link').textContent = 'показать ответ';
+  state.answered = false;
+  if (focusInput && quiz.closest('.tab-content').classList.contains('active')) {
+    input.focus({ preventScroll: true });
+  }
+  return true;
+}
+
 function moveQuizNext(state, render, buttonId, delay = 0) {
   if (state.transitioning || state.idx >= state.items.length) return;
+  const section = document.getElementById(buttonId).closest('.tab-content');
+  if (section.classList.contains('active')) {
+    const input = section.querySelector('.card input');
+    if (input) input.focus({ preventScroll: true });
+  }
   const round = state.round;
   state.transitioning = true;
   document.getElementById(buttonId).disabled = true;
@@ -725,7 +762,7 @@ function moveQuizNext(state, render, buttonId, delay = 0) {
 
 let quiz1State = { items: [], idx: 0, results: [], answered: false, transitioning: false, timer: null, round: 0 };
 
-function renderQuiz() {
+function renderQuiz(focusInput = false) {
   resetQuizTransition(quiz1State, 'next-btn');
   document.getElementById('next-btn').style.display = '';
   quiz1State.items = shuffle(dictionary).slice(0, Math.min(10, dictionary.length));
@@ -737,11 +774,12 @@ function renderQuiz() {
   const tab1 = document.getElementById('tab1');
   const rl1 = tab1.querySelector('.results-list');
   if (rl1) rl1.remove();
-  renderQuizCard();
+  renderQuizCard(focusInput === true);
 }
 
 function renderQuizCard(focusInput = false) {
   const quiz = document.getElementById('quiz');
+  if (updateQuizCardInPlace(quiz, quiz1State, focusInput, false)) return;
   quiz.innerHTML = '';
   if (quiz1State.idx >= quiz1State.items.length) {
     document.getElementById('next-btn').disabled = true;
@@ -825,14 +863,14 @@ function toggleHint(link) {
 }
 
 document.getElementById('next-btn').addEventListener('click', handleQuiz1Next);
-document.getElementById('new-btn').addEventListener('click', renderQuiz);
+document.getElementById('new-btn').addEventListener('click', () => renderQuiz(true));
 
 
 // === TAB 2: АБВ - 字 ===
 
 let quiz2State = { items: [], idx: 0, results: [], answered: false, transitioning: false, timer: null, round: 0 };
 
-function renderQuiz2() {
+function renderQuiz2(focusInput = false) {
   resetQuizTransition(quiz2State, 'next-btn2');
   document.getElementById('next-btn2').style.display = '';
   quiz2State.items = shuffle(dictionary).slice(0, Math.min(10, dictionary.length));
@@ -844,11 +882,12 @@ function renderQuiz2() {
   const tab2 = document.getElementById('tab2');
   const rl2 = tab2.querySelector('.results-list');
   if (rl2) rl2.remove();
-  renderQuiz2Card();
+  renderQuiz2Card(focusInput === true);
 }
 
 function renderQuiz2Card(focusInput = false) {
   const quiz = document.getElementById('quiz2');
+  if (updateQuizCardInPlace(quiz, quiz2State, focusInput, true)) return;
   quiz.innerHTML = '';
   if (quiz2State.idx >= quiz2State.items.length) {
     document.getElementById('next-btn2').disabled = true;
@@ -933,7 +972,7 @@ function toggleHint2(link) {
 }
 
 document.getElementById('next-btn2').addEventListener('click', handleQuiz2Next);
-document.getElementById('new-btn2').addEventListener('click', renderQuiz2);
+document.getElementById('new-btn2').addEventListener('click', () => renderQuiz2(true));
 
 
 // === TAB 5: Последние ===
@@ -950,7 +989,7 @@ function updateTab5Subtitle() {
   if (sub) sub.textContent = 'Переведите 10 иероглифов из последних ' + lastCount + ' на русский язык';
 }
 
-function renderQuiz5() {
+function renderQuiz5(focusInput = false) {
   resetQuizTransition(quiz5State, 'next-btn5');
   document.getElementById('next-btn5').style.display = '';
   const pool = getLastWords();
@@ -963,11 +1002,12 @@ function renderQuiz5() {
   const tab5 = document.getElementById('tab5');
   const rl5 = tab5.querySelector('.results-list');
   if (rl5) rl5.remove();
-  renderQuiz5Card();
+  renderQuiz5Card(focusInput === true);
 }
 
 function renderQuiz5Card(focusInput = false) {
   const quiz = document.getElementById('quiz5');
+  if (updateQuizCardInPlace(quiz, quiz5State, focusInput, false)) return;
   quiz.innerHTML = '';
   if (quiz5State.idx >= quiz5State.items.length) {
     document.getElementById('next-btn5').disabled = true;
@@ -1051,7 +1091,7 @@ function toggleHint5(link) {
 }
 
 document.getElementById('next-btn5').addEventListener('click', handleQuiz5Next);
-document.getElementById('new-btn5').addEventListener('click', renderQuiz5);
+document.getElementById('new-btn5').addEventListener('click', () => renderQuiz5(true));
 
 const lastCountSelect = document.getElementById('last-count');
 if (lastCountSelect) {
