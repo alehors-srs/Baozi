@@ -884,5 +884,25 @@ window.dictionary = [
     "char": "幺",
     "pinyin": "yāo",
     "translation": "один, 1, в номере телефона"
+  },
+  {
+    "char": "穿",
+    "pinyin": "chuān",
+    "translation": "одевать, надевать, носить"
+  },
+  {
+    "char": "女",
+    "pinyin": "nǚ",
+    "translation": "женский"
+  },
+  {
+    "char": "男",
+    "pinyin": "nán",
+    "translation": "мужской"
+  },
+  {
+    "char": "那儿",
+    "pinyin": "nàr",
+    "translation": "там, туда"
   }
 ];
