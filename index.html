@@ -428,11 +428,11 @@ button { touch-action: manipulation; }
           <input type="text" id="add-translation" placeholder="перевод на русский">
         </div>
         <div class="add-word-actions">
-          <button id="add-confirm-btn" class="add-confirm-btn">Добавить в словарь</button>
+          <button id="add-confirm-btn" class="add-confirm-btn">Добавить в Google Sheets</button>
           <button id="add-cancel-btn" class="add-cancel-btn">Отмена</button>
         </div>
       </div>
-      <div id="add-status" class="add-status"></div>
+      <div id="add-status" class="add-status" role="status" aria-live="polite"></div>
     </div>
   </div>
 
@@ -1467,71 +1467,170 @@ function selectCharOption(charVal, pinyinVal, russianVal) {
   addPinyinInput.focus();
 }
 
-function confirmAddWord() {
-  const charVal = addCharInput.value.trim();
-  const pinyinVal = addPinyinInput.value.trim();
-  const translationVal = addTranslationInput.value.trim();
+// Вставьте URL веб-приложения Apps Script, который заканчивается на /exec.
+const GOOGLE_SHEETS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxX1lpvY-mespH4paR5xnodjLBc1BBOIUuXFLAXChfhnpr9y3V56ilbRM9DFmp9djWIrg/exec';
 
-  if (!charVal) { addStatus.textContent = 'Введите иероглиф'; addStatus.className = 'add-status error'; return; }
-  if (!pinyinVal) { addStatus.textContent = 'Введите пиньинь'; addStatus.className = 'add-status error'; return; }
-  if (!translationVal) { addStatus.textContent = 'Введите перевод'; addStatus.className = 'add-status error'; return; }
+function sendWordToSheets(word) {
+  return new Promise((resolve, reject) => {
+    let endpoint;
+    try { endpoint = new URL(GOOGLE_SHEETS_WEB_APP_URL); } catch (_) {
+      reject(new Error('Подключение к Google Sheets ещё не настроено.'));
+      return;
+    }
+    if (endpoint.protocol !== 'https:' || endpoint.hostname !== 'script.google.com' ||
+        !/^\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(endpoint.pathname) || endpoint.search || endpoint.hash) {
+      reject(new Error('Нужен URL опубликованного Apps Script вида https://script.google.com/macros/s/…/exec.'));
+      return;
+    }
+    if (navigator.onLine === false) {
+      reject(new Error('Для добавления в Google Sheets требуется интернет.'));
+      return;
+    }
+    if (location.origin !== 'https://alehors-srs.github.io') {
+      reject(new Error('Добавление доступно на опубликованном сайте https://alehors-srs.github.io/Baozi/.'));
+      return;
+    }
 
-  // Проверка полного совпадения по иероглифам, пиньиню и переводу
-  const candidateWord = { char: charVal, pinyin: pinyinVal, translation: translationVal };
-  const existingWord = dictionary.find(d => isExactWordMatch(d, candidateWord));
-  if (existingWord) {
-    addStatus.textContent = 'Это слово уже есть в словаре: ' + existingWord.pinyin + ' — ' + existingWord.translation;
-    addStatus.className = 'add-status error';
-    // Не закрываем форму: можно уточнить перевод или пиньинь.
-    return;
-  }
+    const requestId = Array.from(crypto.getRandomValues(new Uint8Array(16)),
+      byte => byte.toString(16).padStart(2, '0')).join('');
+    const frame = document.createElement('iframe');
+    frame.name = 'baozi_sheets_' + requestId;
+    frame.hidden = true;
+    frame.title = 'Подтверждение сохранения слова';
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = endpoint.href;
+    form.target = frame.name;
+    form.hidden = true;
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'payload';
+    input.value = JSON.stringify({ action: 'addWord', requestId, word });
+    form.appendChild(input);
+    let timer;
+    let finished = false;
+    const cleanup = () => {
+      clearTimeout(timer);
+      window.removeEventListener('message', onMessage);
+      form.remove();
+      frame.remove();
+    };
+    const fail = error => {
+      if (finished) return;
+      finished = true;
+      cleanup();
+      reject(error);
+    };
+    const onMessage = event => {
+      // Apps Script renders its HTML response in a nested Google sandbox frame.
+      // Match both its HTTPS origin and a fresh unpredictable request nonce.
+      let origin;
+      try { origin = new URL(event.origin); } catch (_) { return; }
+      if (origin.protocol !== 'https:' ||
+          !(origin.hostname === 'script.google.com' || origin.hostname === 'script.googleusercontent.com' ||
+            origin.hostname.endsWith('-script.googleusercontent.com'))) return;
+      const result = event.data;
+      if (finished || !result || typeof result !== 'object' ||
+          result.type !== 'baozi-sheets-result' || result.requestId !== requestId) return;
+      if (result.status === 'error') {
+        fail(new Error(typeof result.message === 'string' ? result.message : 'Ошибка сохранения в Google Sheets.'));
+        return;
+      }
+      if (!['added', 'duplicate'].includes(result.status) || !result.word ||
+          !['char', 'pinyin', 'translation'].every(key =>
+            typeof result.word[key] === 'string' && result.word[key].trim()) ||
+          !isExactWordMatch(result.word, word)) {
+        fail(new Error('Получен некорректный ответ сервера. Проверьте таблицу перед повторной отправкой.'));
+        return;
+      }
+      finished = true;
+      cleanup();
+      resolve(result);
+    };
+    window.addEventListener('message', onMessage);
+    timer = setTimeout(() => fail(new Error(
+      'Подтверждение не получено. Запись могла сохраниться — проверьте таблицу или повторите отправку: дубль будет проверен.'
+    )), 45000);
+    try {
+      document.body.append(frame, form);
+      form.submit();
+    } catch (error) { fail(error); }
+  });
+}
 
-  addConfirmBtn.disabled = true;
-  addConfirmBtn.textContent = 'Добавляю…';
-  // Добавляем запись в рабочий словарь.
-  dictionary.push(candidateWord);
-
-  // Существующий механизм сохранения локальной копии.
+function saveWordLocally(word) {
+  if (!dictionary.some(existing => isExactWordMatch(existing, word))) dictionary.push(word);
   let localSaved = false;
   try {
     const storageKey = 'BAOZI_custom_words';
     const stored = JSON.parse(localStorage.getItem(storageKey) || '[]');
     const localWords = Array.isArray(stored) ? stored : [];
-
-    if (!localWords.some(w => isExactWordMatch(w, candidateWord))) {
-      localWords.push(candidateWord);
-    }
-
+    if (!localWords.some(existing => isExactWordMatch(existing, word))) localWords.push(word);
     localStorage.setItem(storageKey, JSON.stringify(localWords));
     localSaved = true;
-  } catch (e) {
-    console.error('Ошибка сохранения слова:', e);
+  } catch (error) {
+    console.error('Ошибка локального сохранения слова:', error);
   }
-
-  // Refresh dictionary display
   const currentSearch = document.getElementById('dict-search').value;
   renderDictResults(searchDictionary(currentSearch));
+  return localSaved;
+}
 
-  addConfirmBtn.disabled = false;
-  addConfirmBtn.textContent = 'Добавить в словарь';
-
-  if (localSaved) {
-    addStatus.textContent = 'Слово сохранено локально';
-    addStatus.className = 'add-status success';
-  } else {
-    addStatus.textContent = 'Не удалось сохранить слово локально.';
+let addWordRequestPending = false;
+async function confirmAddWord() {
+  if (addWordRequestPending) return;
+  const candidateWord = {
+    char: addCharInput.value.trim(),
+    pinyin: addPinyinInput.value.trim(),
+    translation: addTranslationInput.value.trim()
+  };
+  if (!candidateWord.char || !candidateWord.pinyin || !candidateWord.translation) {
+    addStatus.textContent = 'Заполните иероглиф, пиньинь и перевод';
     addStatus.className = 'add-status error';
+    return;
+  }
+  if (candidateWord.char.length > 100 || candidateWord.pinyin.length > 300 || candidateWord.translation.length > 2000) {
+    addStatus.textContent = 'Слишком длинное поле: максимум 100 символов для слова, 300 для пиньиня и 2000 для перевода.';
+    addStatus.className = 'add-status error';
+    return;
   }
 
-  // Clear form after a delay
-  setTimeout(() => {
+  addWordRequestPending = true;
+  const controls = [addConfirmBtn, addCancelBtn, addLookupBtn, addCharInput, addPinyinInput, addTranslationInput];
+  const disabledBefore = controls.map(control => control.disabled);
+  controls.forEach(control => { control.disabled = true; });
+  addConfirmBtn.textContent = 'Проверяю и сохраняю…';
+  addStatus.textContent = 'Проверяю наличие слова в Google Sheets…';
+  addStatus.className = 'add-status loading';
+  try {
+    // Always check the live sheet, even if a matching local word already exists.
+    const result = await sendWordToSheets(candidateWord);
+    const localSaved = saveWordLocally(result.word);
+    if (result.status === 'duplicate') {
+      addStatus.textContent = 'Это слово уже есть в Google Sheets: ' + result.word.pinyin + ' — ' + result.word.translation;
+      addStatus.className = 'add-status error';
+      return;
+    }
+    addStatus.textContent = localSaved
+      ? 'Слово сохранено в Google Sheets и локально'
+      : 'Слово сохранено в Google Sheets. Локальную копию сохранить не удалось.';
+    addStatus.className = 'add-status success';
+    // Keep the confirmation visible. Do not erase a new entry with a delayed timer.
     addPreview.style.display = 'none';
+    addCharOptions.style.display = 'none';
+    addCharOptions.innerHTML = '';
     addCharInput.value = '';
     addPinyinInput.value = '';
     addTranslationInput.value = '';
-    addStatus.textContent = '';
-    addStatus.className = 'add-status';
-  }, 2500);
+  } catch (error) {
+    addStatus.textContent = error.message || 'Не удалось подтвердить сохранение в Google Sheets.';
+    addStatus.className = 'add-status error';
+    // Preserve every field; neither a failed request nor an opaque response means success.
+  } finally {
+    addWordRequestPending = false;
+    controls.forEach((control, index) => { control.disabled = disabledBefore[index]; });
+    addConfirmBtn.textContent = 'Добавить в Google Sheets';
+  }
 }
 
 // On page load, remove exact duplicates from localStorage and merge remaining custom words.
