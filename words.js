@@ -899,5 +899,10 @@ window.dictionary = [
     "char": "香肠",
     "pinyin": "xiāngcháng",
     "translation": "Колбаса"
+  },
+  {
+    "char": "船",
+    "pinyin": "chuán",
+    "translation": "корабль"
   }
 ];
