@@ -1471,6 +1471,10 @@ function selectCharOption(charVal, pinyinVal, russianVal) {
 const GOOGLE_SHEETS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxX1lpvY-mespH4paR5xnodjLBc1BBOIUuXFLAXChfhnpr9y3V56ilbRM9DFmp9djWIrg/exec';
 
 function sendWordToSheets(word) {
+  return requestSheets('addWord', word);
+}
+
+function requestSheets(action, word) {
   return new Promise((resolve, reject) => {
     let endpoint;
     try { endpoint = new URL(GOOGLE_SHEETS_WEB_APP_URL); } catch (_) {
@@ -1505,7 +1509,7 @@ function sendWordToSheets(word) {
     const input = document.createElement('input');
     input.type = 'hidden';
     input.name = 'payload';
-    input.value = JSON.stringify({ action: 'addWord', requestId, word });
+    input.value = JSON.stringify({ action, requestId, word });
     form.appendChild(input);
     let timer;
     let finished = false;
@@ -1536,6 +1540,17 @@ function sendWordToSheets(word) {
         fail(new Error(typeof result.message === 'string' ? result.message : 'Ошибка сохранения в Google Sheets.'));
         return;
       }
+      if (action === 'getDictionary') {
+        if (result.status !== 'dictionary' || !/^[a-f0-9]{64}$/.test(result.version) ||
+            !Array.isArray(result.words) || !result.words.every(validDictionaryWord)) {
+          fail(new Error('Получен некорректный словарь. Сохранена предыдущая версия.'));
+          return;
+        }
+        finished = true;
+        cleanup();
+        resolve(result);
+        return;
+      }
       if (!['added', 'duplicate'].includes(result.status) || !result.word ||
           !['char', 'pinyin', 'translation'].every(key =>
             typeof result.word[key] === 'string' && result.word[key].trim()) ||
@@ -1559,21 +1574,7 @@ function sendWordToSheets(word) {
 }
 
 function saveWordLocally(word) {
-  if (!dictionary.some(existing => isExactWordMatch(existing, word))) dictionary.push(word);
-  let localSaved = false;
-  try {
-    const storageKey = 'BAOZI_custom_words';
-    const stored = JSON.parse(localStorage.getItem(storageKey) || '[]');
-    const localWords = Array.isArray(stored) ? stored : [];
-    if (!localWords.some(existing => isExactWordMatch(existing, word))) localWords.push(word);
-    localStorage.setItem(storageKey, JSON.stringify(localWords));
-    localSaved = true;
-  } catch (error) {
-    console.error('Ошибка локального сохранения слова:', error);
-  }
-  const currentSearch = document.getElementById('dict-search').value;
-  renderDictResults(searchDictionary(currentSearch));
-  return localSaved;
+  return rememberConfirmedSharedWord(word);
 }
 
 let addWordRequestPending = false;
@@ -1596,6 +1597,7 @@ async function confirmAddWord() {
   }
 
   addWordRequestPending = true;
+  dictionaryMutationEpoch++;
   const controls = [addConfirmBtn, addCancelBtn, addLookupBtn, addCharInput, addPinyinInput, addTranslationInput];
   const disabledBefore = controls.map(control => control.disabled);
   controls.forEach(control => { control.disabled = true; });
@@ -1630,65 +1632,141 @@ async function confirmAddWord() {
     addWordRequestPending = false;
     controls.forEach((control, index) => { control.disabled = disabledBefore[index]; });
     addConfirmBtn.textContent = 'Добавить в Google Sheets';
+    dictionaryMutationEpoch++;
+    void refreshDictionaryFromSheets(true);
+  }
+}
+
+// Live shared dictionary; old custom entries stay separate from the shared snapshot.
+const SHARED_DICTIONARY_CACHE_KEY = 'BAOZI_shared_dictionary_v1';
+const CUSTOM_WORDS_KEY = 'BAOZI_custom_words';
+let sharedDictionaryWords = dictionary.map(word => ({ ...word }));
+let sharedDictionaryVersion = null;
+let dictionaryMutationEpoch = 0;
+let dictionaryRefreshPromise = null;
+let dictionaryRefreshAgain = false;
+
+function validDictionaryWord(word) {
+  return !!word && typeof word === 'object' && !Array.isArray(word) &&
+    ['char', 'pinyin', 'translation'].every(field =>
+      typeof word[field] === 'string' && normalizeWordField(word[field]).length > 0);
+}
+
+function uniqueDictionaryWords(words) {
+  const keys = new Set();
+  return words.filter(word => {
+    const key = JSON.stringify([normalizeWordField(word.char), normalizeWordPinyin(word.pinyin), normalizeWordField(word.translation)]);
+    if (keys.has(key)) return false;
+    keys.add(key);
+    return true;
+  });
+}
+
+function readCustomDictionaryWords() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(CUSTOM_WORDS_KEY) || '[]');
+    if (!Array.isArray(stored)) return [];
+    return uniqueDictionaryWords(stored.filter(validDictionaryWord));
+  } catch (error) {
+    console.warn('Не удалось прочитать локальные слова:', error);
+    return [];
+  }
+}
+
+function storeSharedDictionarySnapshot() {
+  try {
+    localStorage.setItem(SHARED_DICTIONARY_CACHE_KEY, JSON.stringify({
+      words: sharedDictionaryWords, version: sharedDictionaryVersion, savedAt: Date.now()
+    }));
+    return true;
+  } catch (error) {
+    console.warn('Не удалось сохранить офлайн-копию общего словаря:', error);
+    return false;
+  }
+}
+
+function rebuildWorkingDictionary() {
+  const sharedKeys = new Set(sharedDictionaryWords.map(word => JSON.stringify([
+    normalizeWordField(word.char), normalizeWordPinyin(word.pinyin), normalizeWordField(word.translation)
+  ])));
+  const local = readCustomDictionaryWords().filter(word => !sharedKeys.has(JSON.stringify([
+    normalizeWordField(word.char), normalizeWordPinyin(word.pinyin), normalizeWordField(word.translation)
+  ])));
+  try { localStorage.setItem(CUSTOM_WORDS_KEY, JSON.stringify(local)); } catch (_) {}
+  // Preserve the array reference and every active round; only the dictionary view is rendered.
+  const merged = uniqueDictionaryWords([...sharedDictionaryWords, ...local]);
+  dictionary.splice(0, dictionary.length, ...merged);
+  const query = document.getElementById('dict-search').value;
+  renderDictResults(searchDictionary(query));
+}
+
+function rememberConfirmedSharedWord(word) {
+  if (!sharedDictionaryWords.some(existing => isExactWordMatch(existing, word))) {
+    sharedDictionaryWords.push({ ...word });
+  }
+  sharedDictionaryVersion = null;
+  const cached = storeSharedDictionarySnapshot();
+  rebuildWorkingDictionary();
+  return cached;
+}
+
+async function refreshDictionaryFromSheets(force = false) {
+  if (document.hidden || navigator.onLine === false) return;
+  if (addWordRequestPending || dictionaryRefreshPromise) {
+    if (force) dictionaryRefreshAgain = true;
+    return dictionaryRefreshPromise;
+  }
+  dictionaryRefreshAgain = false;
+  const epoch = dictionaryMutationEpoch;
+  dictionaryRefreshPromise = (async () => {
+    try {
+      const result = await requestSheets('getDictionary');
+      // A read started before a write must never overwrite its confirmed word.
+      if (epoch !== dictionaryMutationEpoch || addWordRequestPending) {
+        dictionaryRefreshAgain = true;
+        return;
+      }
+      if (result.version === sharedDictionaryVersion) return;
+      sharedDictionaryWords = uniqueDictionaryWords(result.words.map(word => ({ ...word })));
+      sharedDictionaryVersion = result.version;
+      storeSharedDictionarySnapshot();
+      rebuildWorkingDictionary();
+    } catch (error) {
+      // Failed/invalid reads leave the last good dictionary and the form untouched.
+      console.warn('Синхронизация словаря отложена:', error.message || error);
+    }
+  })();
+  try { await dictionaryRefreshPromise; } finally {
+    dictionaryRefreshPromise = null;
+    if (dictionaryRefreshAgain && !addWordRequestPending) {
+      dictionaryRefreshAgain = false;
+      if (!document.hidden && navigator.onLine !== false) {
+        setTimeout(() => { void refreshDictionaryFromSheets(); }, 0);
+      }
+    }
   }
 }
 
 // On page load, remove exact duplicates from localStorage and merge remaining custom words.
-(function loadCustomWords() {
-  const storageKey = 'BAOZI_custom_words';
-
+(function initializeSharedDictionary() {
   try {
-    const storedWords = JSON.parse(
-      localStorage.getItem(storageKey) || '[]'
-    );
-
-    if (!Array.isArray(storedWords)) {
-      console.warn('Неверный формат словаря localStorage');
-      return;
-    }
-
-    const localWords = [];
-    let removed = 0;
-
-    for (const word of storedWords) {
-      if (
-        !word ||
-        typeof word.char !== 'string' ||
-        typeof word.pinyin !== 'string' ||
-        typeof word.translation !== 'string' ||
-        !word.char.trim() ||
-        !word.pinyin.trim() ||
-        !word.translation.trim()
-      ) {
-        removed++;
-        continue;
+    const raw = localStorage.getItem(SHARED_DICTIONARY_CACHE_KEY);
+    if (raw) {
+      const cached = JSON.parse(raw);
+      if (cached && Array.isArray(cached.words) && cached.words.every(validDictionaryWord) &&
+          (cached.version === null || typeof cached.version === 'string')) {
+        sharedDictionaryWords = uniqueDictionaryWords(cached.words);
+        sharedDictionaryVersion = cached.version;
       }
-
-      // dictionary уже содержит words.js и ранее принятые локальные слова.
-      const duplicate = dictionary.some(d =>
-        isExactWordMatch(d, word)
-      );
-
-      if (duplicate) {
-        removed++;
-        continue;
-      }
-
-      localWords.push(word);
-      dictionary.push(word);
     }
-
-    localStorage.setItem(storageKey, JSON.stringify(localWords));
-
-    console.log(
-      'BAOZI: локальный словарь очищен.',
-      'Удалено:', removed,
-      'Осталось:', localWords.length
-    );
-
-  } catch (e) {
-    console.error('Ошибка очистки localStorage:', e);
-  }
+  } catch (error) { console.warn('Офлайн-копия словаря недоступна:', error); }
+  rebuildWorkingDictionary();
+  void refreshDictionaryFromSheets();
+  setInterval(() => { void refreshDictionaryFromSheets(); }, 30000);
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) void refreshDictionaryFromSheets(true);
+  });
+  window.addEventListener('online', () => { void refreshDictionaryFromSheets(true); });
 })();
 
 
