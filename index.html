@@ -1642,7 +1642,6 @@ async function refreshDictionaryFromSheets(force = false) {
   } catch (error) { console.warn('Офлайн-копия словаря недоступна:', error); }
   rebuildWorkingDictionary();
   void refreshDictionaryFromSheets();
-  setInterval(() => { void refreshDictionaryFromSheets(); }, 30000);
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) void refreshDictionaryFromSheets(true);
   });
