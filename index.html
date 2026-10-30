@@ -38,8 +38,7 @@
   .stat-box .label { font-size: 12px; color: #95a5a6; text-transform: uppercase; }
   .stat-box .value { font-size: 22px; font-weight: bold; color: #2c3e50; }
   #quiz,
-  #quiz2,
-  #quiz5 {
+  #quiz2 {
   max-width: 700px;
   margin: 0 auto;
 }
@@ -60,7 +59,7 @@
   #check-btn:hover, .check-btn:hover { background: #2980b9; }
   #new-btn, .new-btn { background: #2ecc71; color: #fff; }
   #new-btn:hover, .new-btn:hover { background: #27ae60; }
-  #result-banner, #result-banner2, #result-banner5 { text-align: center; font-size: 20px; font-weight: bold; margin: 16px 0; min-height: 28px; }
+  #result-banner, #result-banner2 { text-align: center; font-size: 20px; font-weight: bold; margin: 16px 0; min-height: 28px; }
   .score-green { color: #27ae60; }
   .score-orange { color: #e67e22; }
   .score-red { color: #e74c3c; }
@@ -210,6 +209,11 @@
   /* Test word count selector */
   .test-count-select { padding: 12px 20px; font-size: 18px; border: 2px solid #d0d5db; border-radius: 12px; outline: none; margin-bottom: 20px; cursor: pointer; }
   .test-count-select:focus { border-color: #3498db; }
+  .test-settings { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; max-width: 520px; margin: 0 auto 20px; text-align: left; }
+  .test-settings label { display: block; margin-bottom: 8px; font-size: 16px; color: #2c3e50; }
+  .test-settings .test-count-select { width: 100%; min-width: 0; margin-bottom: 0; padding-inline: 10px; font-size: 16px; }
+  .test-start-status { color: #e74c3c; }
+  .test-start-status:empty { display: none; }
   .test-restart-during { background: #e74c3c; color: #fff; font-size: 16px; padding: 10px 28px; border: none; border-radius: 10px; cursor: pointer; transition: background 0.2s; }
   .test-restart-during:hover { background: #c0392b; }
   .test-pinyin { font-size: 22px; color: #3498db; margin-top: -18px; margin-bottom: 18px; font-weight: 600; }
@@ -299,6 +303,8 @@ button { touch-action: manipulation; }
 @media (max-width: 480px) {
   body { padding: 12px; }
   h1 { font-size: 23px; }
+  .test-settings label { font-size: 14px; }
+  .test-settings .test-count-select { font-size: 14px; padding-inline: 8px; }
   .tabs {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
@@ -350,8 +356,6 @@ button { touch-action: manipulation; }
           aria-controls="tab1" aria-expanded="false"><span class="tab-label">字 - АБВ</span></button>
   <button type="button" class="tab" data-tab="tab2"
           aria-controls="tab2" aria-expanded="false"><span class="tab-label">АБВ - 字</span></button>
-  <button type="button" class="tab" data-tab="tab5"
-          aria-controls="tab5" aria-expanded="false"><span class="tab-label">Последние</span></button>
   <button type="button" class="tab" data-tab="tab7"
           aria-controls="tab7" aria-expanded="false"><span class="tab-label">Тест</span></button>
   <button type="button" class="tab" data-tab="tab6"
@@ -382,26 +386,6 @@ button { touch-action: manipulation; }
   <div class="actions">
     <button id="next-btn2" class="next-btn">Следующая</button>
     <button class="new-btn" id="new-btn2">Новый раунд</button>
-  </div>
-</div>
-
-<!-- TAB 5: Последние -->
-<div class="tab-content" id="tab5">
-  <div style="text-align:center; margin-bottom:16px;">
-    <label style="display:block; margin-bottom:8px; font-size:16px; color:#2c3e50;">Количество слов:</label>
-    <select class="test-count-select" id="last-count">
-      <option value="25">25 слов</option>
-      <option value="50" selected>50 слов</option>
-      <option value="75">75 слов</option>
-      <option value="100">100 слов</option>
-    </select>
-  </div>
-  <p class="subtitle" id="tab5-subtitle">Переведите 10 иероглифов из последних 50 на русский язык</p>
-  <div id="result-banner5"></div>
-  <div id="quiz5"></div>
-  <div class="actions">
-    <button id="next-btn5" class="next-btn">Следующая</button>
-    <button class="new-btn" id="new-btn5">Новый раунд</button>
   </div>
 </div>
 
@@ -456,13 +440,26 @@ button { touch-action: manipulation; }
 <div class="tab-content" id="tab7">
   <div id="test-start" class="test-start-screen">
     <h2>Тест на знание иероглифов</h2>
-    <label style="display:block; margin-bottom:8px; font-size:16px; color:#2c3e50;">Количество слов:</label>
-    <select class="test-count-select" id="test-count">
-      <option value="10">10 слов</option>
-      <option value="25">25 слов</option>
-      <option value="50">50 слов</option>
-    </select>
-    <br>
+    <div class="test-settings">
+      <div>
+        <label for="test-count">Количество слов:</label>
+        <select class="test-count-select" id="test-count">
+          <option value="10">10 слов</option>
+          <option value="25">25 слов</option>
+          <option value="50">50 слов</option>
+        </select>
+      </div>
+      <div>
+        <label for="test-pool">Последних слов:</label>
+        <select class="test-count-select" id="test-pool">
+          <option value="all" selected>Весь словарь</option>
+          <option value="25">25 слов</option>
+          <option value="50">50 слов</option>
+          <option value="100">100 слов</option>
+        </select>
+      </div>
+    </div>
+    <p class="test-start-status" id="test-start-status" role="status"></p>
     <button class="test-btn" id="test-start-btn">Начать тест</button>
   </div>
   <div id="test-quiz" style="display:none;">
@@ -481,13 +478,25 @@ button { touch-action: manipulation; }
     <div class="test-result-score" id="test-score"></div>
     <div class="test-result-msg" id="test-msg"></div>
     <div class="results-list" id="test-results-list"></div>
-    <label style="display:block; margin-bottom:8px; font-size:16px; color:#2c3e50;">Количество слов:</label>
-    <select class="test-count-select" id="test-count2">
-      <option value="10">10 слов</option>
-      <option value="25">25 слов</option>
-      <option value="50">50 слов</option>
-    </select>
-    <br>
+    <div class="test-settings">
+      <div>
+        <label for="test-count2">Количество слов:</label>
+        <select class="test-count-select" id="test-count2">
+          <option value="10">10 слов</option>
+          <option value="25">25 слов</option>
+          <option value="50">50 слов</option>
+        </select>
+      </div>
+      <div>
+        <label for="test-pool2">Последних слов:</label>
+        <select class="test-count-select" id="test-pool2">
+          <option value="all" selected>Весь словарь</option>
+          <option value="25">25 слов</option>
+          <option value="50">50 слов</option>
+          <option value="100">100 слов</option>
+        </select>
+      </div>
+    </div>
     <button class="test-restart-btn" id="test-restart-btn">Начать тест заново</button>
   </div>
 </div>
@@ -680,7 +689,6 @@ document.querySelectorAll('.tab').forEach(tab => {
     if (!initializedSections.has(sectionId)) {
       if (sectionId === 'tab1') renderQuiz();
       if (sectionId === 'tab2') renderQuiz2();
-      if (sectionId === 'tab5') renderQuiz5();
 
       initializedSections.add(sectionId);
     }
@@ -696,7 +704,7 @@ document.addEventListener('pointerdown', event => {
   const control = event.target.closest('.hint-link, .speak-btn');
   if (!control) return;
 
-  const card = control.closest('#quiz .card, #quiz2 .card, #quiz5 .card');
+  const card = control.closest('#quiz .card, #quiz2 .card');
   if (!card) return;
 
   const input = card.querySelector('input');
@@ -997,134 +1005,6 @@ function toggleHint2(link) {
 
 document.getElementById('next-btn2').addEventListener('click', handleQuiz2Next);
 document.getElementById('new-btn2').addEventListener('click', () => renderQuiz2(true));
-
-
-// === TAB 5: Последние ===
-
-let quiz5State = { items: [], idx: 0, results: [], answered: false, transitioning: false, timer: null, round: 0 };
-let lastCount = 50;
-
-function getLastWords() {
-  return dictionary.slice(-lastCount);
-}
-
-function updateTab5Subtitle() {
-  const sub = document.getElementById('tab5-subtitle');
-  if (sub) sub.textContent = 'Переведите 10 иероглифов из последних ' + lastCount + ' на русский язык';
-}
-
-function renderQuiz5(focusInput = false) {
-  resetQuizTransition(quiz5State, 'next-btn5');
-  document.getElementById('next-btn5').style.display = '';
-  const pool = getLastWords();
-  quiz5State.items = shuffle(pool).slice(0, Math.min(10, pool.length));
-  quiz5State.idx = 0;
-  quiz5State.results = [];
-  quiz5State.answered = false;
-  document.getElementById('result-banner5').textContent = '';
-  document.getElementById('result-banner5').className = '';
-  const tab5 = document.getElementById('tab5');
-  const rl5 = tab5.querySelector('.results-list');
-  if (rl5) rl5.remove();
-  renderQuiz5Card(focusInput === true);
-}
-
-function renderQuiz5Card(focusInput = false) {
-  const quiz = document.getElementById('quiz5');
-  if (updateQuizCardInPlace(quiz, quiz5State, focusInput, false)) return;
-  quiz.innerHTML = '';
-  if (quiz5State.idx >= quiz5State.items.length) {
-    document.getElementById('next-btn5').disabled = true;
-    document.getElementById('next-btn5').style.display = 'none';
-    showQuizResults(quiz5State.results, document.getElementById('result-banner5'));
-    return;
-  }
-  const item = quiz5State.items[quiz5State.idx];
-  const progress = document.createElement('div');
-  progress.className = 'quiz-progress-text';
-  progress.textContent = 'Слово ' + (quiz5State.idx + 1) + ' из ' + quiz5State.items.length;
-  quiz.appendChild(progress);
-
-  const card = document.createElement('div');
-  card.className = 'card';
-  card.id = 'quiz5-card-current';
-  const top = makeElement('div', 'card-top');
-  const char = makeElement('div', 'char', item.char);
-  top.append(char, makeSpeakButton(item.char, 'speak-btn'));
-
-  const body = makeElement('div', 'card-body');
-  const input = document.createElement('input');
-  input.type = 'text';
-  input.placeholder = 'Перевод на русский…';
-  input.id = 'quiz5-input';
-  input.dataset.correct = item.translation;
-  input.dataset.pinyin = item.pinyin || '';
-  const hintLink = makeElement('span', 'hint-link', 'показать ответ');
-  hintLink.addEventListener('click', () => toggleHint5(hintLink));
-  const hint = makeElement('div', 'hint', 'Пиньинь: ' + (item.pinyin || '—') + ' | Перевод: ' + item.translation);
-  body.append(input, hintLink, hint);
-  card.append(top, body);
-  quiz.appendChild(card);
-  quiz5State.answered = false;
-  const inp = card.querySelector('input');
-  // Вход в раздел — без курсора; следующая видимая карточка — с курсором.
-  if (focusInput && inp.closest('.tab-content').classList.contains('active')) {
-    inp.focus({ preventScroll: true });
-  }
-  inp.addEventListener('keydown', e => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handleQuiz5Next();
-    }
-  });
-}
-
-function handleQuiz5Next() {
-  if (quiz5State.transitioning || quiz5State.idx >= quiz5State.items.length) return;
-  const card = document.getElementById('quiz5-card-current');
-  if (!card) return;
-
-  if (quiz5State.answered) {
-    moveQuizNext(quiz5State, renderQuiz5Card, 'next-btn5');
-    return;
-  }
-
-  const inp = card.querySelector('input');
-  const item = quiz5State.items[quiz5State.idx];
-  const empty = !inp.value.trim();
-  const ok = !empty && (checkAnswer(inp.value, inp.dataset.correct));
-  quiz5State.results.push({
-    char: item.char,
-    pinyin: item.pinyin || '—',
-    translation: item.translation,
-    userAnswer: empty ? '(пусто)' : inp.value,
-    correct: ok
-  });
-  card.classList.remove('correct', 'wrong');
-  card.classList.add(ok ? 'correct' : 'wrong');
-  quiz5State.answered = true;
-  if (ok || empty) {
-    moveQuizNext(quiz5State, renderQuiz5Card, 'next-btn5', 500);
-  }
-}
-
-function toggleHint5(link) {
-  const hint = link.nextElementSibling;
-  hint.classList.toggle('show');
-  link.textContent = hint.classList.contains('show') ? 'скрыть ответ' : 'показать ответ';
-}
-
-document.getElementById('next-btn5').addEventListener('click', handleQuiz5Next);
-document.getElementById('new-btn5').addEventListener('click', () => renderQuiz5(true));
-
-const lastCountSelect = document.getElementById('last-count');
-if (lastCountSelect) {
-  lastCountSelect.addEventListener('change', () => {
-    lastCount = parseInt(lastCountSelect.value);
-    updateTab5Subtitle();
-    renderQuiz5();
-  });
-}
 
 
 // === SHARED: Results list ===
@@ -1863,6 +1743,9 @@ let testQuestions = [];
 let testCurrentIdx = 0;
 let testScore = 0;
 let testCount = 10;
+let testPool = 'all';
+let testMainQuestions = [];
+let testIsReinforcement = false;
 let testSoundEnabled = true;
 let testVersion = 0;
 const testTimers = new Set();
@@ -1884,18 +1767,45 @@ function setTestTimer(callback, delay, version) {
   return timer;
 }
 
-function startTest() {
+// Keep both settings panels aligned; 25 recent words support tests of 10 or 25.
+function syncTestSettings(count, pool) {
+  count = [10, 25, 50].includes(Number(count)) ? Number(count) : 10;
+  pool = ['all', '25', '50', '100'].includes(pool) ? pool : 'all';
+  if (count > 25 && pool === '25') pool = 'all';
+  for (const suffix of ['', '2']) {
+    document.getElementById('test-count' + suffix).value = String(count);
+    const poolSelect = document.getElementById('test-pool' + suffix);
+    poolSelect.querySelector('option[value="25"]').disabled = count > 25;
+    poolSelect.value = pool;
+  }
+  return { count, pool };
+}
+
+function startTest(settingsSuffix = '') {
   cancelTestPending();
-  const sel = document.getElementById('test-count');
-  const sel2 = document.getElementById('test-count2');
-  testCount = parseInt(sel ? sel.value : (sel2 ? sel2.value : 10));
-  testQuestions = shuffle(dictionary).slice(0, Math.min(testCount, dictionary.length)).map(item => {
+  const settings = syncTestSettings(
+    document.getElementById('test-count' + settingsSuffix).value,
+    document.getElementById('test-pool' + settingsSuffix).value
+  );
+  testCount = settings.count;
+  testPool = settings.pool;
+  const pool = testPool === 'all' ? dictionary : dictionary.slice(-Number(testPool));
+  if (pool.length === 0) {
+    restartTest();
+    document.getElementById('test-start-status').textContent = 'В словаре пока нет слов для теста.';
+    return;
+  }
+  testQuestions = shuffle(pool).slice(0, Math.min(testCount, pool.length)).map(item => {
     const distractors = shuffle(dictionary.filter(d => d.translation !== item.translation)).slice(0, 3);
     const options = shuffle([item, ...distractors]).map(d => d.translation);
     return { char: item.char, pinyin: item.pinyin || '—', correct: item.translation, options: options, userAnswer: null, isCorrect: false };
   });
   testCurrentIdx = 0;
   testScore = 0;
+  testMainQuestions = [];
+  testIsReinforcement = false;
+  document.getElementById('test-start-status').textContent = '';
+  document.getElementById('test-results-list').innerHTML = '';
   document.getElementById('test-start').style.display = 'none';
   document.getElementById('test-result').style.display = 'none';
   document.getElementById('test-quiz').style.display = 'block';
@@ -1904,11 +1814,16 @@ function startTest() {
 
 function restartTest() {
   cancelTestPending();
+  testQuestions = [];
+  testMainQuestions = [];
+  testCurrentIdx = 0;
+  testScore = 0;
+  testIsReinforcement = false;
   document.getElementById('test-quiz').style.display = 'none';
   document.getElementById('test-result').style.display = 'none';
   document.getElementById('test-start').style.display = 'block';
-  const listEl = document.getElementById('test-results-list');
-  if (listEl) listEl.innerHTML = '';
+  document.getElementById('test-start-status').textContent = '';
+  document.getElementById('test-results-list').innerHTML = '';
 }
 
 function updateTestPrevButton() {
@@ -1927,7 +1842,8 @@ function renderTestQuestion(isReview) {
   const fill = document.getElementById('test-progress-fill');
   const text = document.getElementById('test-progress-text');
   fill.style.width = ((testCurrentIdx) / testQuestions.length * 100) + '%';
-  text.textContent = 'Вопрос ' + (testCurrentIdx + 1) + ' из ' + testQuestions.length;
+  text.textContent = (testIsReinforcement ? 'Закрепление: вопрос ' : 'Вопрос ') +
+    (testCurrentIdx + 1) + ' из ' + testQuestions.length;
 
   updateTestPrevButton();
 
@@ -2025,7 +1941,7 @@ function handleTestAnswer(btn, selected, q) {
   if (selected === q.correct) {
     btn.classList.add('correct');
     q.isCorrect = true;
-    testScore++;
+    if (!testIsReinforcement) testScore++;
   } else {
     btn.classList.add('wrong');
     q.isCorrect = false;
@@ -2074,20 +1990,37 @@ function handleTestAnswer(btn, selected, q) {
 
 function showTestResult() {
   cancelTestPending();
+  // Keep the first attempt intact, even across several reinforcement rounds.
+  if (!testIsReinforcement) testMainQuestions = testQuestions.slice();
+  const mistakes = testQuestions.filter(q => !q.isCorrect);
+  if (mistakes.length > 0) {
+    testQuestions = shuffle(mistakes).map(q => ({
+      ...q,
+      options: shuffle(q.options),
+      userAnswer: null,
+      isCorrect: false
+    }));
+    testCurrentIdx = 0;
+    testIsReinforcement = true;
+    renderTestQuestion(false);
+    return;
+  }
   document.getElementById('test-quiz').style.display = 'none';
   const resultDiv = document.getElementById('test-result');
   const scoreDiv = document.getElementById('test-score');
   const msgDiv = document.getElementById('test-msg');
   const listDiv = document.getElementById('test-results-list');
-  const total = testQuestions.length;
+  const total = testMainQuestions.length;
 
-  scoreDiv.textContent = testScore + ' / ' + total;
+  scoreDiv.textContent = 'Основной тест: ' + testScore + ' / ' + total;
   if (testScore === total) { scoreDiv.className = 'test-result-score score-green'; msgDiv.textContent = 'Идеально! 🎉'; }
   else if (testScore >= Math.ceil(total * 0.7)) { scoreDiv.className = 'test-result-score score-orange'; msgDiv.textContent = 'Хороший результат!'; }
   else { scoreDiv.className = 'test-result-score score-red'; msgDiv.textContent = 'Нужно больше практики'; }
 
+  if (testIsReinforcement) msgDiv.textContent += ' Закрепление завершено ✓';
+
   listDiv.innerHTML = '';
-  testQuestions.forEach(q => {
+  testMainQuestions.forEach(q => {
     const row = document.createElement('div');
     row.className = 'result-row ' + (q.isCorrect ? 'ok' : 'err');
     const charPinyin = makeElement('div', 'result-char-pinyin');
@@ -2103,14 +2036,25 @@ function showTestResult() {
     listDiv.appendChild(row);
   });
 
-  const sel2 = document.getElementById('test-count2');
-  if (sel2) sel2.value = String(testCount);
+  syncTestSettings(testCount, testPool);
 
   resultDiv.style.display = 'block';
 }
 
-document.getElementById('test-start-btn').addEventListener('click', startTest);
-document.getElementById('test-restart-btn').addEventListener('click', startTest);
+for (const suffix of ['', '2']) {
+  for (const field of ['test-count', 'test-pool']) {
+    document.getElementById(field + suffix).addEventListener('change', () => {
+      syncTestSettings(
+        document.getElementById('test-count' + suffix).value,
+        document.getElementById('test-pool' + suffix).value
+      );
+    });
+  }
+}
+syncTestSettings(testCount, testPool);
+
+document.getElementById('test-start-btn').addEventListener('click', () => startTest());
+document.getElementById('test-restart-btn').addEventListener('click', () => startTest('2'));
 document.getElementById('test-restart-during-btn').addEventListener('click', restartTest);
 
 // Sound toggle button
@@ -2147,3 +2091,4 @@ if ('serviceWorker' in navigator) {
 </script>
 </body>
 </html>
+
