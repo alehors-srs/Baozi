@@ -176,7 +176,12 @@
   .test-char { font-size: 64px; color: #2c3e50; margin-bottom: 28px; }
   .test-options { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .test-option { padding: 16px 20px; font-size: 17px; border: 2px solid #d0d5db; border-radius: 12px; background: #fff; cursor: pointer; transition: all 0.2s; text-align: center; }
-  .test-option:hover { border-color: #3498db; background: #f8fbff; }
+  @media (hover: hover) and (pointer: fine) {
+    .test-option:hover {
+      border-color: #3498db;
+      background: #f8fbff;
+    }
+  }
   .test-option.correct { border-color: #27ae60; background: #eafaf1; color: #27ae60; font-weight: 600; }
   .test-option.wrong { border-color: #e74c3c; background: #fdedec; color: #e74c3c; font-weight: 600; }
   .test-option.disabled { pointer-events: none; opacity: 0.6; }
@@ -2090,4 +2095,5 @@ if ('serviceWorker' in navigator) {
 </script>
 </body>
 </html>
+
 
