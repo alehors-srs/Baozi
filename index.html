@@ -299,8 +299,22 @@ button { touch-action: manipulation; }
     padding: 0;
   }
   .hint-link { padding-block: 12px; font-size: 14px; }
-  .dict-item { flex-wrap: wrap; gap: 10px; padding: 16px; }
-  .dict-info { flex: 1 1 180px; }
+  .dict-item {
+    flex-wrap: nowrap;
+    gap: 10px;
+    padding: 16px;
+}
+
+.dict-char {
+  flex: 0 0 auto;
+  min-width: 0;
+  max-width: 45%;
+}
+
+.dict-info {
+  flex: 1 1 0;
+  min-width: 0;
+}
   .result-row { flex-wrap: wrap; }
   .result-translation { flex: 1 1 150px; }
   .test-prev-btn, .test-restart-during { margin: 4px; }
