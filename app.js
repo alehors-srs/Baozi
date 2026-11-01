@@ -188,8 +188,8 @@ document.querySelectorAll('.tab').forEach(tab => {
     window.scrollTo(0, 0);
 
     if (!initializedSections.has(sectionId)) {
-      if (sectionId === 'tab1') renderQuiz();
-      if (sectionId === 'tab2') renderQuiz2();
+      if (sectionId === 'tab1') showQuizStart();
+      if (sectionId === 'tab2') showQuizStart('2');
 
       initializedSections.add(sectionId);
     }
@@ -290,6 +290,25 @@ function moveQuizNext(state, render, buttonId, delay = 0) {
     render(true);
   }, delay);
 }
+
+// Настройки показываем до запуска раунда; отменяем отложенный переход карточки.
+function showQuizStart(suffix = '') {
+  resetQuizTransition(suffix === '2' ? quiz2State : quiz1State, 'next-btn' + suffix);
+  document.getElementById('quiz-start' + suffix).hidden = false;
+  document.getElementById('quiz-round' + suffix).hidden = true;
+}
+
+function startQuizRound(suffix = '') {
+  document.getElementById('quiz-start' + suffix).hidden = true;
+  document.getElementById('quiz-round' + suffix).hidden = false;
+  if (suffix === '2') renderQuiz2();
+  else renderQuiz();
+}
+
+document.getElementById('quiz-start-btn')
+  .addEventListener('click', () => startQuizRound());
+document.getElementById('quiz-start-btn2')
+  .addEventListener('click', () => startQuizRound('2'));
 
 // === TAB 1: 字 - АБВ ===
 
@@ -400,7 +419,7 @@ function toggleHint(link) {
 }
 
 document.getElementById('next-btn').addEventListener('click', handleQuiz1Next);
-document.getElementById('new-btn').addEventListener('click', () => renderQuiz(true));
+document.getElementById('new-btn').addEventListener('click', () => showQuizStart());
 
 
 // === TAB 2: АБВ - 字 ===
@@ -513,7 +532,7 @@ function toggleHint2(link) {
 }
 
 document.getElementById('next-btn2').addEventListener('click', handleQuiz2Next);
-document.getElementById('new-btn2').addEventListener('click', () => renderQuiz2(true));
+document.getElementById('new-btn2').addEventListener('click', () => showQuizStart('2'));
 
 
 // === SHARED: Results list ===

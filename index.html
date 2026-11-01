@@ -40,44 +40,54 @@
 <!-- TAB 1: 字 - АБВ -->
 <div class="tab-content" id="tab1">
   <p class="subtitle">Переведите 10 иероглифов на русский</p>
-  <div class="test-settings" style="grid-template-columns: minmax(0, 1fr); max-width: 150px;">
-    <div>
-      <label for="quiz-pool">Последних слов:</label>
-      <select class="test-count-select" id="quiz-pool">
-        <option value="all" selected>Весь словарь</option>
-        <option value="25">25 слов</option>
-        <option value="50">50 слов</option>
-        <option value="100">100 слов</option>
-      </select>
+  <div id="quiz-start" style="text-align: center;">
+    <div class="test-settings" style="grid-template-columns: minmax(0, 1fr); max-width: 150px;">
+      <div>
+        <label for="quiz-pool">Последних слов:</label>
+        <select class="test-count-select" id="quiz-pool">
+          <option value="all" selected>Весь словарь</option>
+          <option value="25">25 слов</option>
+          <option value="50">50 слов</option>
+          <option value="100">100 слов</option>
+        </select>
+      </div>
     </div>
+    <button type="button" class="test-btn" id="quiz-start-btn">Начать раунд</button>
   </div>
-  <div id="result-banner"></div>
-  <div id="quiz"></div>
-  <div class="actions">
-    <button id="next-btn" class="next-btn">Следующая</button>
-    <button id="new-btn">Новый раунд</button>
+  <div id="quiz-round" hidden>
+    <div id="result-banner"></div>
+    <div id="quiz"></div>
+    <div class="actions">
+      <button id="next-btn" class="next-btn">Следующая</button>
+      <button id="new-btn">Новый раунд</button>
+    </div>
   </div>
 </div>
 
 <!-- TAB 2: АБВ - 字 -->
 <div class="tab-content" id="tab2">
   <p class="subtitle">Переведите 10 русских слов на китайский</p>
-  <div class="test-settings" style="grid-template-columns: minmax(0, 1fr); max-width: 150px;">
-    <div>
-      <label for="quiz-pool2">Последних слов:</label>
-      <select class="test-count-select" id="quiz-pool2">
-        <option value="all" selected>Весь словарь</option>
-        <option value="25">25 слов</option>
-        <option value="50">50 слов</option>
-        <option value="100">100 слов</option>
-      </select>
+  <div id="quiz-start2" style="text-align: center;">
+    <div class="test-settings" style="grid-template-columns: minmax(0, 1fr); max-width: 150px;">
+      <div>
+        <label for="quiz-pool2">Последних слов:</label>
+        <select class="test-count-select" id="quiz-pool2">
+          <option value="all" selected>Весь словарь</option>
+          <option value="25">25 слов</option>
+          <option value="50">50 слов</option>
+          <option value="100">100 слов</option>
+        </select>
+      </div>
     </div>
+    <button type="button" class="test-btn" id="quiz-start-btn2">Начать раунд</button>
   </div>
-  <div id="result-banner2"></div>
-  <div id="quiz2"></div>
-  <div class="actions">
-    <button id="next-btn2" class="next-btn">Следующая</button>
-    <button class="new-btn" id="new-btn2">Новый раунд</button>
+  <div id="quiz-round2" hidden>
+    <div id="result-banner2"></div>
+    <div id="quiz2"></div>
+    <div class="actions">
+      <button id="next-btn2" class="next-btn">Следующая</button>
+      <button class="new-btn" id="new-btn2">Новый раунд</button>
+    </div>
   </div>
 </div>
 
@@ -208,4 +218,3 @@
 
 </body>
 </html>
-
