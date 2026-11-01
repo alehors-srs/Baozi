@@ -48,7 +48,7 @@ class DictionarySyncTests(unittest.TestCase):
                 (root / name).write_bytes(b'original')
             for failure in ('invalid', 'network'):
                 def fetch(gid):
-                    if gid == '0':
+                    if gid == 'words':
                         return 'char,pinyin,translation\n你,nǐ,ты\n'
                     if failure == 'network':
                         raise sync.urllib.error.URLError('offline')
@@ -73,3 +73,4 @@ class DictionarySyncTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
