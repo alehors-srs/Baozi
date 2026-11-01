@@ -38,6 +38,17 @@
 <!-- TAB 1: 字 - АБВ -->
 <div class="tab-content" id="tab1">
   <p class="subtitle">Переведите 10 иероглифов на русский</p>
+  <div class="test-settings" style="grid-template-columns: minmax(0, 1fr);">
+    <div>
+      <label for="quiz-pool">Последних слов:</label>
+      <select class="test-count-select" id="quiz-pool">
+        <option value="all" selected>Весь словарь</option>
+        <option value="25">25 слов</option>
+        <option value="50">50 слов</option>
+        <option value="100">100 слов</option>
+      </select>
+    </div>
+  </div>
   <div id="result-banner"></div>
   <div id="quiz"></div>
   <div class="actions">
@@ -49,6 +60,17 @@
 <!-- TAB 2: АБВ - 字 -->
 <div class="tab-content" id="tab2">
   <p class="subtitle">Переведите 10 русских слов на китайский</p>
+  <div class="test-settings" style="grid-template-columns: minmax(0, 1fr);">
+    <div>
+      <label for="quiz-pool2">Последних слов:</label>
+      <select class="test-count-select" id="quiz-pool2">
+        <option value="all" selected>Весь словарь</option>
+        <option value="25">25 слов</option>
+        <option value="50">50 слов</option>
+        <option value="100">100 слов</option>
+      </select>
+    </div>
+  </div>
   <div id="result-banner2"></div>
   <div id="quiz2"></div>
   <div class="actions">
@@ -177,5 +199,3 @@
 
 </body>
 </html>
-
-

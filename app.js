@@ -298,7 +298,11 @@ let quiz1State = { items: [], idx: 0, results: [], answered: false, transitionin
 function renderQuiz(focusInput = false) {
   resetQuizTransition(quiz1State, 'next-btn');
   document.getElementById('next-btn').style.display = '';
-  quiz1State.items = shuffle(dictionary).slice(0, Math.min(10, dictionary.length));
+  const selectedPool = document.getElementById('quiz-pool').value;
+  const pool = selectedPool === 'all'
+    ? dictionary
+    : dictionary.slice(-Number(selectedPool));
+  quiz1State.items = shuffle(pool).slice(0, Math.min(10, pool.length));
   quiz1State.idx = 0;
   quiz1State.results = [];
   quiz1State.answered = false;
@@ -406,7 +410,11 @@ let quiz2State = { items: [], idx: 0, results: [], answered: false, transitionin
 function renderQuiz2(focusInput = false) {
   resetQuizTransition(quiz2State, 'next-btn2');
   document.getElementById('next-btn2').style.display = '';
-  quiz2State.items = shuffle(dictionary).slice(0, Math.min(10, dictionary.length));
+  const selectedPool = document.getElementById('quiz-pool2').value;
+  const pool = selectedPool === 'all'
+    ? dictionary
+    : dictionary.slice(-Number(selectedPool));
+  quiz2State.items = shuffle(pool).slice(0, Math.min(10, pool.length));
   quiz2State.idx = 0;
   quiz2State.results = [];
   quiz2State.answered = false;
