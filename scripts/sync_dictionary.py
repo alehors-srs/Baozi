@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate Baozi dictionaries from the two published Google Sheets CSVs."""
+"""Generate this site's dictionaries from CSV URLs in site-config.js."""
 import argparse
 import csv
 import io
@@ -11,24 +11,41 @@ import tempfile
 import time
 import urllib.error
 import urllib.request
+import urllib.parse
 
-BASE_URL = (
-    'https://docs.google.com/spreadsheets/d/e/'
-    '2PACX-1vThqLMZa5zXTaQZws0fdPuFirZ_H9TvyWTR50cp6yjYYG7riAYCnfqkOZBdT1M-fQE2yG4QKM7qgSJL/pub'
-)
 SOURCES = (
-    ('words', '0', 'words.js', 'dictionary'),
-    ('names', '753580976', 'names.js', 'names'),
+    ('words', 'words.js', 'dictionary'),
+    ('names', 'names.js', 'names'),
 )
+CONFIG_PATH = Path(__file__).resolve().parents[1] / 'site-config.js'
 FIELDS = ('char', 'pinyin', 'translation')
 MAX_BYTES = 5 * 1024 * 1024
 INVISIBLE = str.maketrans('', '', '\u200b\u200c\u200d\u2060\ufeff\u00ad')
 
 
-def download_csv(gid):
-    url = f'{BASE_URL}?gid={gid}&single=true&output=csv'
+def load_sources(config_path=CONFIG_PATH):
+    text = Path(config_path).read_text(encoding='utf-8')
+    prefix = 'window.TRAINER_CONFIG = Object.freeze('
+    start = text.find(prefix)
+    if start < 0 or not text.rstrip().endswith(');'):
+        raise ValueError('Invalid site-config.js format')
+    config = json.loads(text[start + len(prefix):].strip()[:-2])
+    urls = config['csv']
+    for sheet, _, _ in SOURCES:
+        parsed = urllib.parse.urlsplit(urls[sheet])
+        query = urllib.parse.parse_qs(parsed.query)
+        if (parsed.scheme != 'https' or parsed.netloc != 'docs.google.com'
+                or not parsed.path.startswith('/spreadsheets/d/e/')
+                or not parsed.path.endswith('/pub') or parsed.fragment
+                or query.get('output') != ['csv'] or query.get('single') != ['true']
+                or len(query.get('gid', [])) != 1 or not query['gid'][0].isdigit()):
+            raise ValueError(f'{sheet}: expected a published Google Sheets CSV URL')
+    return urls
+
+
+def download_csv(url):
     request = urllib.request.Request(url, headers={
-        'User-Agent': 'Baozi-Dictionary-Sync/1.0',
+        'User-Agent': 'Chinese-Trainer-Dictionary-Sync/1.0',
         'Cache-Control': 'no-cache',
     })
     for attempt in range(3):
@@ -94,12 +111,15 @@ def generate(variable, records):
     )
 
 
-def synchronize(output_dir, fetch=download_csv):
+def synchronize(output_dir, fetch=None):
+    if fetch is None:
+        urls = load_sources()
+        fetch = lambda sheet: download_csv(urls[sheet])
     # Validate BOTH sheets before opening any output file for writing.
     outputs = {}
     counts = {}
-    for sheet, gid, filename, variable in SOURCES:
-        records = parse_csv(fetch(gid), sheet)
+    for sheet, filename, variable in SOURCES:
+        records = parse_csv(fetch(sheet), sheet)
         outputs[filename] = generate(variable, records)
         counts[sheet] = len(records)
     output_dir = Path(output_dir)
@@ -133,7 +153,7 @@ def main():
     args = parser.parse_args()
     try:
         synchronize(args.output_dir)
-    except (ValueError, csv.Error, OSError, UnicodeError, urllib.error.URLError) as error:
+    except (ValueError, KeyError, TypeError, csv.Error, OSError, UnicodeError, urllib.error.URLError) as error:
         print(f'ERROR: {error}', file=sys.stderr)
         return 1
     return 0
@@ -141,3 +161,4 @@ def main():
 
 if __name__ == '__main__':
     sys.exit(main())
+
