@@ -348,4 +348,9 @@ button { touch-action: manipulation; }
   outline: 3px solid #3498db;
   outline-offset: 3px;
 }
-
+#new-btn,
+#new-btn2 {
+  flex: 0 1 auto;
+  width: 160px;
+  max-width: 100%;
+}
