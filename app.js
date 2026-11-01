@@ -1580,7 +1580,7 @@ for (const suffix of ['', '2']) {
 syncTestSettings(testCount, testPool);
 
 document.getElementById('test-start-btn').addEventListener('click', () => startTest());
-document.getElementById('test-restart-btn').addEventListener('click', restartTest);
+document.getElementById('test-restart-btn').addEventListener('click', () => startTest('2'));
 document.getElementById('test-restart-during-btn').addEventListener('click', restartTest);
 
 // Sound toggle button
