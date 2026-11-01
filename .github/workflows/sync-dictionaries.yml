@@ -1,4 +1,4 @@
-name: Sync dictionaries and deploy Baozi
+name: Sync dictionaries and deploy site
 
 on:
   workflow_dispatch:
@@ -11,7 +11,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: baozi-sync-and-pages
+  group: site-update-and-pages
   cancel-in-progress: false
 
 jobs:
@@ -36,7 +36,11 @@ jobs:
           python-version: '3.12'
 
       - name: Test CSV validation
-        run: python -m unittest discover -s tests -v
+        run: |
+          python -m unittest discover -s tests -v
+          node --check site-config.js
+          node --check app.js
+          node --check sw.js
 
       - name: Synchronize both dictionaries
         run: python scripts/sync_dictionary.py
@@ -73,17 +77,11 @@ jobs:
       - name: Prepare static website
         if: steps.publish.outputs.deploy == 'true'
         run: |
-          mkdir _site
-          cp index.html words.js names.js manifest.json sw.js _site/
-          cp -R images fonts _site/
-          if [ -f CNAME ]; then cp CNAME _site/; fi
-          if [ -f robots.txt ]; then cp robots.txt _site/; fi
-          if [ -f 404.html ]; then cp 404.html _site/; fi
-          touch _site/.nojekyll
+          python scripts/prepare_site.py --output-dir _site
 
       - name: Upload website
         if: steps.publish.outputs.deploy == 'true'
-        uses: actions/upload-pages-artifact@v5
+        uses: actions/upload-pages-artifact@v4
         with:
           path: _site
 
@@ -101,4 +99,5 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v5
+        uses: actions/deploy-pages@v4
+
