@@ -361,11 +361,6 @@ window.dictionary = [
     "translation": "сто, сотня, 100"
   },
   {
-    "char": "知道",
-    "pinyin": "zhīdào",
-    "translation": "знать"
-  },
-  {
     "char": "会",
     "pinyin": "huì",
     "translation": "уметь, мочь"
@@ -889,5 +884,55 @@ window.dictionary = [
     "char": "用",
     "pinyin": "yòng",
     "translation": "использовать, нуждаться, польза"
+  },
+  {
+    "char": "电话",
+    "pinyin": "diànhuà",
+    "translation": "звонить, (по телефону)"
+  },
+  {
+    "char": "知道",
+    "pinyin": "zhīdào",
+    "translation": "знать"
+  },
+  {
+    "char": "说话",
+    "pinyin": "shuōhuà",
+    "translation": "говорить, сказать, разговаривать"
+  },
+  {
+    "char": "用",
+    "pinyin": "yòng",
+    "translation": "использовать, польза"
+  },
+  {
+    "char": "不用",
+    "pinyin": "búyòng",
+    "translation": "не нужно, нет необходимости, не использовать"
+  },
+  {
+    "char": "回",
+    "pinyin": "huí",
+    "translation": "возвращаться, разворачивать"
+  },
+  {
+    "char": "早上好",
+    "pinyin": "zǎo shang hǎo",
+    "translation": "доброе утро"
+  },
+  {
+    "char": "下个",
+    "pinyin": "xiàge",
+    "translation": "следующий"
+  },
+  {
+    "char": "吧",
+    "pinyin": "ba",
+    "translation": "побуждение, побудительная частица"
+  },
+  {
+    "char": "零",
+    "pinyin": "líng",
+    "translation": "ноль, 0"
   }
 ];
