@@ -56,6 +56,16 @@ window.dictionary = [
     "translation": "вы"
   },
   {
+    "char": "我们",
+    "pinyin": "wǒmen",
+    "translation": "мы"
+  },
+  {
+    "char": "他们",
+    "pinyin": "tāmen",
+    "translation": "они"
+  },
+  {
     "char": "关系",
     "pinyin": "guānxi",
     "translation": "связь, отношение"
