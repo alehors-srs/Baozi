@@ -344,6 +344,14 @@ button { touch-action: manipulation; }
   color: #2c3e50;
   border: 1px solid rgba(44, 62, 80, 0.30);
 }
+
+/* Кнопка остаётся на своём месте и видна при прокрутке. */
+body:has(#tab6.active, #tab8.active) .section-navigation {
+  position: sticky;
+  top: calc(8px + env(safe-area-inset-top, 0px));
+  z-index: 1000;
+}
+
 .back-to-sections:focus-visible {
   outline: 3px solid #3498db;
   outline-offset: 3px;
