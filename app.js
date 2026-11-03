@@ -46,16 +46,17 @@ function isExactWordMatch(a, b) {
     normalizeWordField(a.translation) === normalizeWordField(b.translation);
 }
 
-// === ОЗВУЧКА ИЕРОГЛИФОВ ===
+// === RESPONSIVEVOICE TTS ===
 function speakChinese(text) {
-  if ('speechSynthesis' in window) {
-    window.speechSynthesis.cancel();
-
+  if (typeof responsiveVoice !== 'undefined') {
+    responsiveVoice.cancel();
+    responsiveVoice.speak(text, 'Chinese Female', {rate: 0.72});
+  } else if ('speechSynthesis' in window) {
+    speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(text);
     u.lang = 'zh-CN';
     u.rate = 0.72;
-
-    window.speechSynthesis.speak(u);
+    speechSynthesis.speak(u);
   }
 }
 
@@ -1279,6 +1280,7 @@ function cancelTestPending() {
   testVersion++;
   for (const timer of testTimers) clearTimeout(timer);
   testTimers.clear();
+  if (typeof responsiveVoice !== 'undefined') responsiveVoice.cancel();
   if ('speechSynthesis' in window) window.speechSynthesis.cancel();
 }
 
@@ -1439,16 +1441,17 @@ function renderTestQuestion(isReview) {
 }
 
 function speakChineseWithCallback(text, onEnd) {
-  if ('speechSynthesis' in window) {
-    window.speechSynthesis.cancel();
-
+  if (typeof responsiveVoice !== 'undefined') {
+    responsiveVoice.cancel();
+    responsiveVoice.speak(text, 'Chinese Female', {rate: 0.72, onend: onEnd});
+  } else if ('speechSynthesis' in window) {
+    speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(text);
     u.lang = 'zh-CN';
     u.rate = 0.72;
     u.onend = onEnd;
     u.onerror = onEnd;
-
-    window.speechSynthesis.speak(u);
+    speechSynthesis.speak(u);
   } else {
     onEnd();
   }
