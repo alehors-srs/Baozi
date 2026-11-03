@@ -344,19 +344,6 @@ button { touch-action: manipulation; }
   color: #2c3e50;
   border: 1px solid rgba(44, 62, 80, 0.30);
 }
-
-/* Закрепляем кнопку только в разделах «Словарь» и «Имена». */
-body:has(#tab6.active, #tab8.active) .section-navigation {
-  min-height: 44px;
-}
-
-body:has(#tab6.active, #tab8.active) .back-to-sections {
-  position: fixed;
-  top: calc(12px + env(safe-area-inset-top, 0px));
-  left: calc(12px + env(safe-area-inset-left, 0px));
-  z-index: 1000;
-  
-}
 .back-to-sections:focus-visible {
   outline: 3px solid #3498db;
   outline-offset: 3px;
