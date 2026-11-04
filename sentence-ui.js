@@ -8,6 +8,7 @@
     byId('start').disabled = true;
     return;
   }
+  const ROUND_SIZE = 10;
   let round = [], index = 0, main = [], reinforcement = false, locked = false;
   const node = (tag, content, className) => {
     const el = document.createElement(tag);
@@ -23,11 +24,9 @@
     // Снимок актуального словаря при каждом новом раунде, без изменения активных карточек.
     const catalog = engine.buildCatalog(window.dictionary || [], window.names || [],
       window.SENTENCE_LEXICON, window.SENTENCE_GRAMMAR_HSK1);
-    const selected = byId('grammar').value;
-    const questions = engine.makeRound(catalog.filter(q => selected === 'all' || q.ruleId === selected),
-      Number(byId('count').value));
-    if (!questions.length) {
-      byId('status').textContent = 'В словарях пока недостаточно размеченных слов для выбранной конструкции.';
+    const questions = engine.makeRound(catalog, ROUND_SIZE);
+    if (questions.length !== ROUND_SIZE) {
+      byId('status').textContent = 'В словарях пока недостаточно слов для 10 разных заданий.';
       return;
     }
     cancelSpeech();
@@ -35,8 +34,7 @@
     main = round;
     index = 0;
     reinforcement = false;
-    byId('status').textContent = questions.length < Number(byId('count').value)
-      ? 'Доступно уникальных заданий: ' + questions.length + '.' : '';
+    byId('status').textContent = '';
     byId('settings').hidden = true;
     byId('results').hidden = true;
     byId('quiz').hidden = false;
@@ -144,9 +142,4 @@
   byId('reset').addEventListener('click', reset);
   byId('new').addEventListener('click', reset);
   document.getElementById('back-to-sections').addEventListener('click', cancelSpeech);
-  for (const rule of window.SENTENCE_GRAMMAR_HSK1.constructions) {
-    const option = node('option', rule.title);
-    option.value = rule.id;
-    byId('grammar').append(option);
-  }
 })();

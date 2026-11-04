@@ -1,9 +1,7 @@
 /* Стили ограничены разделом «Предложения». */
 #tab9 [hidden] { display: none !important; }
 #tab9 .sentence-panel { max-width: 700px; margin: 0 auto; }
-#tab9 .sentence-settings { display: grid; gap: 14px; margin: 20px 0; }
 #tab9 label { display: block; margin-bottom: 6px; }
-#tab9 select { width: 100%; }
 #tab9 .sentence-card { padding: 24px; border-radius: 16px; background: white; box-shadow: 0 4px 18px #0001; }
 #tab9 .sentence-prompt { font-size: clamp(22px, 5vw, 30px); margin: 16px 0 24px; overflow-wrap: anywhere; }
 #tab9 .sentence-input { width: 100%; min-width: 0; font-size: 25px; padding: 12px; border: 2px solid #b8c9d8; border-radius: 10px; }
@@ -16,4 +14,4 @@
 #tab9 .sentence-result-list { list-style: none; padding: 0; margin-top: 20px; }
 #tab9 .sentence-result-item { background: white; border-radius: 10px; padding: 14px; margin: 10px 0; overflow-wrap: anywhere; }
 #tab9 .sentence-result-item p { margin: 6px 0; }
-#tab9 button:focus-visible, #tab9 input:focus-visible, #tab9 select:focus-visible { outline: 3px solid #145d91; outline-offset: 3px; }
+#tab9 button:focus-visible, #tab9 input:focus-visible { outline: 3px solid #145d91; outline-offset: 3px; }
