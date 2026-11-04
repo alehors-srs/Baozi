@@ -6,8 +6,10 @@ from pathlib import Path
 import shutil
 
 PUBLIC_FILES = ('index.html', 'site-config.js', 'app.js', 'app.css',
-                'words.js', 'names.js', 'manifest.json', 'sw.js')
-VERSIONED = ('site-config.js', 'app.js', 'app.css', 'words.js', 'names.js', 'manifest.json')
+                'words.js', 'names.js', 'manifest.json', 'sw.js',
+                'sentence-grammar-hsk1.js', 'sentence-lexicon.js', 'sentence-engine.js', 'sentence-ui.js', 'sentences.css')
+VERSIONED = ('site-config.js', 'app.js', 'app.css', 'words.js', 'names.js', 'manifest.json',
+             'sentence-grammar-hsk1.js', 'sentence-lexicon.js', 'sentence-engine.js', 'sentence-ui.js', 'sentences.css')
 
 
 def prepare(root, output):
@@ -59,3 +61,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
