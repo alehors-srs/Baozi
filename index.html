@@ -13,6 +13,7 @@
 <link rel="apple-touch-icon" sizes="180x180" href="images/apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
 <link rel="stylesheet" href="app.css">
+<link rel="stylesheet" href="sentences.css">
 <script src="https://code.responsivevoice.org/responsivevoice.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pinyin-pro/3.29.4/index.js"></script>
 </head>
@@ -204,17 +205,66 @@
 </div>
 
 
-<!-- TAB 9: Предложения — временная заглушка -->
+<!-- TAB 9: Предложения HSK1 -->
 <div class="tab-content" id="tab9">
-  <img src="images/monkeys.gif" alt="Извините! Раздел в разработке!"
-       loading="lazy" decoding="async"
-       style="display: block; width: 100%; max-width: 700px; height: auto; margin: 0 auto;">
+  <div class="sentence-panel">
+    <h2>Предложения · HSK1</h2>
+    <p class="sentence-note">Переведите предложение на китайский иероглифами. После проверки появятся образец, объяснение и озвучка.</p>
+    <div id="sentence-settings">
+      <div class="sentence-settings">
+        <div>
+          <label for="sentence-count">Количество карточек:</label>
+          <select id="sentence-count" class="test-count-select">
+            <option value="10">10</option><option value="25">25</option>
+          </select>
+        </div>
+        <div>
+          <label for="sentence-grammar">Грамматическая конструкция:</label>
+          <select id="sentence-grammar" class="test-count-select"><option value="all">Все конструкции</option></select>
+        </div>
+      </div>
+      <p class="sentence-note">Слова и имена берутся из словарей сайта. Проверка принимает описанные варианты перевода; другие правильные варианты могут пока не распознаваться.</p>
+      <button type="button" class="test-btn" id="sentence-start">Начать раунд</button>
+    </div>
+    <p id="sentence-status" role="status" class="sentence-note"></p>
+    <div id="sentence-quiz" hidden>
+      <p id="sentence-progress" class="sentence-note"></p>
+      <progress id="sentence-bar" max="10" value="0" aria-label="Прогресс раунда"></progress>
+      <div class="sentence-card">
+        <p id="sentence-prompt" class="sentence-prompt"></p>
+        <form id="sentence-form">
+          <label for="sentence-answer">Ваш перевод:</label>
+          <input id="sentence-answer" class="sentence-input" lang="zh-CN" autocomplete="off" spellcheck="false" maxlength="200" aria-describedby="sentence-prompt sentence-feedback">
+          <div class="sentence-actions">
+            <button type="submit" id="sentence-check" class="test-btn">Проверить</button>
+            <button type="button" id="sentence-reveal" hidden>Не засчитывать и показать ответ</button>
+          </div>
+        </form>
+        <div id="sentence-feedback" class="sentence-feedback" role="status" aria-live="polite"></div>
+        <button type="button" id="sentence-next" class="test-next-btn" hidden>Следующая →</button>
+      </div>
+      <div class="sentence-actions"><button type="button" id="sentence-reset">Завершить раунд</button></div>
+    </div>
+    <div id="sentence-results" hidden>
+      <p id="sentence-score" class="sentence-note" role="status"></p>
+      <div class="sentence-actions">
+        <button type="button" id="sentence-repeat">Повторить незасчитанные</button>
+        <button type="button" id="sentence-new">Новый раунд</button>
+      </div>
+      <ul id="sentence-list" class="sentence-result-list"></ul>
+    </div>
+  </div>
 </div>
 
 <!-- Load dictionary from external file (works with file:// protocol) -->
 <script src="words.js"></script>
 <script src="names.js"></script>
 <script src="app.js"></script>
+<script src="sentence-grammar-hsk1.js"></script>
+<script src="sentence-lexicon.js"></script>
+<script src="sentence-engine.js"></script>
+<script src="sentence-ui.js"></script>
 
 </body>
 </html>
+
