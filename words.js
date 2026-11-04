@@ -944,5 +944,50 @@ window.dictionary = [
     "char": "零",
     "pinyin": "líng",
     "translation": "ноль, 0"
+  },
+  {
+    "char": "给",
+    "pinyin": "gěi",
+    "translation": "для, давать"
+  },
+  {
+    "char": "公司",
+    "pinyin": "gōngsī",
+    "translation": "Организация, компания, фирма"
+  },
+  {
+    "char": "玩",
+    "pinyin": "wán",
+    "translation": "Играть, развлекаться"
+  },
+  {
+    "char": "在",
+    "pinyin": "zài",
+    "translation": "Обстоятельство места, в процессе, в течение"
+  },
+  {
+    "char": "里",
+    "pinyin": "lǐ",
+    "translation": "внутри"
+  },
+  {
+    "char": "衣服",
+    "pinyin": "yīfu",
+    "translation": "одежда"
+  },
+  {
+    "char": "电影",
+    "pinyin": "diànyǐng",
+    "translation": "Фильм, кино"
+  },
+  {
+    "char": "词典",
+    "pinyin": "cídiǎn",
+    "translation": "словарь"
+  },
+  {
+    "char": "作业",
+    "pinyin": "zuòyè",
+    "translation": "Домашнее задание"
   }
 ];
