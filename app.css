@@ -345,11 +345,39 @@ button { touch-action: manipulation; }
   border: 1px solid rgba(44, 62, 80, 0.30);
 }
 
-/* Кнопка остаётся на своём месте и видна при прокрутке. */
-body:has(#tab6.active, #tab8.active) .section-navigation {
-  position: sticky;
-  top: calc(8px + env(safe-area-inset-top, 0px));
+.page-scroll-controls {
+  display: none;
+  position: fixed;
+  left: calc(8px + env(safe-area-inset-left, 0px));
+  top: 50%;
+  transform: translateY(-50%);
   z-index: 1000;
+  flex-direction: column;
+  gap: 10px;
+}
+
+body:has(#tab6.active, #tab8.active) .page-scroll-controls {
+  display: flex;
+}
+
+.page-scroll-controls button {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  font-size: 26px;
+  line-height: 1;
+  color: #2c3e50;
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(44, 62, 80, 0.30);
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+}
+
+.page-scroll-controls button:focus-visible {
+  outline: 3px solid #3498db;
+  outline-offset: 3px;
 }
 
 .back-to-sections:focus-visible {
@@ -362,3 +390,4 @@ body:has(#tab6.active, #tab8.active) .section-navigation {
   width: 160px;
   max-width: 100%;
 }
+

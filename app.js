@@ -196,6 +196,26 @@ document.querySelectorAll('.tab').forEach(tab => {
   });
 });
 
+function scrollPageToEdge(toBottom) {
+  const page = document.scrollingElement || document.documentElement;
+  const reduceMotion = window.matchMedia(
+    '(prefers-reduced-motion: reduce)'
+  ).matches;
+
+  window.scrollTo({
+    top: toBottom ? page.scrollHeight : 0,
+    behavior: reduceMotion ? 'instant' : 'smooth'
+  });
+}
+
+document.getElementById('page-scroll-up').addEventListener('click', () => {
+  scrollPageToEdge(false);
+});
+
+document.getElementById('page-scroll-down').addEventListener('click', () => {
+  scrollPageToEdge(true);
+});
+
 // Текст словаря не интерпретируется как HTML или JavaScript.
 // Сохраняем фокус в поле при нажатии подсказки или озвучки.
 document.addEventListener('pointerdown', event => {
@@ -1619,3 +1639,4 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
       .catch(error => console.warn('Не удалось включить офлайн-режим:', error));
   });
 }
+
