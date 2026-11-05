@@ -350,7 +350,7 @@ button { touch-action: manipulation; }
   position: fixed;
   left: calc(8px + env(safe-area-inset-left, 0px));
   top: 50%;
-  top: calc(160px + env(safe-area-inset-top, 0px));
+  transform: translateY(-50%);
   z-index: 1000;
   flex-direction: column;
   gap: 10px;
