@@ -1,4 +1,5 @@
-// Generated from Google Sheets. Edit the spreadsheet, not this file.
+// Словарь для тренажёра иероглифов
+// Сгенерировано из Excel-файла.
 window.dictionary = [
   {
     "char": "你",
@@ -54,16 +55,6 @@ window.dictionary = [
     "char": "你们",
     "pinyin": "nǐmen",
     "translation": "вы"
-  },
-  {
-    "char": "我们",
-    "pinyin": "wǒmen",
-    "translation": "мы"
-  },
-  {
-    "char": "他们",
-    "pinyin": "tāmen",
-    "translation": "они"
   },
   {
     "char": "关系",
@@ -369,6 +360,11 @@ window.dictionary = [
     "char": "百",
     "pinyin": "bǎi",
     "translation": "сто, сотня, 100"
+  },
+  {
+    "char": "知道",
+    "pinyin": "zhīdào",
+    "translation": "знать"
   },
   {
     "char": "会",
@@ -889,105 +885,5 @@ window.dictionary = [
     "char": "幺",
     "pinyin": "yāo",
     "translation": "один, 1, в номере телефона"
-  },
-  {
-    "char": "用",
-    "pinyin": "yòng",
-    "translation": "использовать, нуждаться, польза"
-  },
-  {
-    "char": "电话",
-    "pinyin": "diànhuà",
-    "translation": "звонить, (по телефону)"
-  },
-  {
-    "char": "知道",
-    "pinyin": "zhīdào",
-    "translation": "знать"
-  },
-  {
-    "char": "说话",
-    "pinyin": "shuōhuà",
-    "translation": "говорить, сказать, разговаривать"
-  },
-  {
-    "char": "用",
-    "pinyin": "yòng",
-    "translation": "использовать, польза"
-  },
-  {
-    "char": "不用",
-    "pinyin": "búyòng",
-    "translation": "не нужно, нет необходимости, не использовать"
-  },
-  {
-    "char": "回",
-    "pinyin": "huí",
-    "translation": "возвращаться, разворачивать"
-  },
-  {
-    "char": "早上好",
-    "pinyin": "zǎo shang hǎo",
-    "translation": "доброе утро"
-  },
-  {
-    "char": "下个",
-    "pinyin": "xiàge",
-    "translation": "следующий"
-  },
-  {
-    "char": "吧",
-    "pinyin": "ba",
-    "translation": "побуждение, побудительная частица"
-  },
-  {
-    "char": "零",
-    "pinyin": "líng",
-    "translation": "ноль, 0"
-  },
-  {
-    "char": "给",
-    "pinyin": "gěi",
-    "translation": "для, давать"
-  },
-  {
-    "char": "公司",
-    "pinyin": "gōngsī",
-    "translation": "Организация, компания, фирма"
-  },
-  {
-    "char": "玩",
-    "pinyin": "wán",
-    "translation": "Играть, развлекаться"
-  },
-  {
-    "char": "在",
-    "pinyin": "zài",
-    "translation": "Обстоятельство места, в процессе, в течение"
-  },
-  {
-    "char": "里",
-    "pinyin": "lǐ",
-    "translation": "внутри"
-  },
-  {
-    "char": "衣服",
-    "pinyin": "yīfu",
-    "translation": "одежда"
-  },
-  {
-    "char": "电影",
-    "pinyin": "diànyǐng",
-    "translation": "Фильм, кино"
-  },
-  {
-    "char": "词典",
-    "pinyin": "cídiǎn",
-    "translation": "словарь"
-  },
-  {
-    "char": "作业",
-    "pinyin": "zuòyè",
-    "translation": "Домашнее задание"
   }
 ];

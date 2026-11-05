@@ -1,4 +1,5 @@
-// Generated from Google Sheets. Edit the spreadsheet, not this file.
+// Имена для тренажёра иероглифов
+// Сгенерировано из Excel-файла.
 window.names = [
   {
     "char": "李月",
