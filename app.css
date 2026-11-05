@@ -391,4 +391,9 @@ body:has(#tab6.active, #tab8.active) .page-scroll-controls {
   width: 160px;
   max-width: 100%;
 }
-
+/* Закрепляем «К разделам» в Словаре и Именах. */
+body:has(#tab6.active, #tab8.active) .section-navigation {
+  position: sticky;
+  top: calc(8px + env(safe-area-inset-top, 0px));
+  z-index: 1000;
+}
