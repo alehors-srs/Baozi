@@ -45,7 +45,11 @@
       activeController.abort();
     }, timeout);
     try {
-      const response = await fetch(new URL(path, endpoint), {
+      const url = new URL(path, endpoint);
+      if (path === '/sentences/start' || path === '/sentences/status') {
+        url.searchParams.set('probe', crypto.randomUUID());
+      }
+      const response = await fetch(url, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, cache: 'no-store',
         signal: activeController.signal, body: JSON.stringify({ ...data, site: config.aiSiteId })
       });
