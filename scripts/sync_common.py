@@ -8,7 +8,7 @@ import shutil
 
 # Workflows, settings, dictionaries, manifest and media are deliberately absent.
 COMMON_FILES = (
-    'index.html', 'app.css', 'app.js', 'sw.js',
+    'index.html', 'app.css', 'app.js', 'sentences.js', 'sw.js',
     'scripts/prepare_site.py', 'scripts/sync_dictionary.py', 'scripts/sync_common.py',
     'tests/test_sync_dictionary.py', 'tests/test_common_code.py',
 )
@@ -47,3 +47,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+

@@ -5,9 +5,9 @@ import hashlib
 from pathlib import Path
 import shutil
 
-PUBLIC_FILES = ('index.html', 'site-config.js', 'app.js', 'app.css',
+PUBLIC_FILES = ('index.html', 'site-config.js', 'app.js', 'sentences.js', 'app.css',
                 'words.js', 'names.js', 'manifest.json', 'sw.js')
-VERSIONED = ('site-config.js', 'app.js', 'app.css', 'words.js', 'names.js', 'manifest.json')
+VERSIONED = ('site-config.js', 'app.js', 'sentences.js', 'app.css', 'words.js', 'names.js', 'manifest.json')
 
 
 def prepare(root, output):
@@ -59,3 +59,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
