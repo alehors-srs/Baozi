@@ -74,7 +74,7 @@
     if (busy) return;
     const current = ++epoch;
     setBusy(true); resetBtn.hidden = false;
-    setStatus('DeepSeek составляет и проверяет 10 предложений. Это может занять до двух с половиной минут.');
+    setStatus('DeepSeek составляет и проверяет 10 предложений. Это может занять некоторое время.');
     startBtn.textContent = 'Готовим раунд…';
     try {
       const words = window.TrainerDictionary?.snapshot();
