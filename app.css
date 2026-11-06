@@ -397,3 +397,38 @@ body:has(#tab6.active, #tab8.active) .section-navigation {
   top: calc(8px + env(safe-area-inset-top, 0px));
   z-index: 1000;
 }
+
+
+/* Предложения: общие карточки Baozi и Chinese-quiz. */
+.sentences-wrap { max-width: 700px; margin-inline: auto; }
+.sentences-start { text-align: center; padding: 16px 8px; }
+.sentences-start p { line-height: 1.6; margin-bottom: 16px; }
+.sentences-status { text-align: center; line-height: 1.5; color: #2c3e50; margin-block: 16px; }
+.sentences-status:empty { display: none; }
+.sentences-status.is-error { color: #b33a2e; }
+.sentences-card, .sentences-review { background: #fff; border-radius: 16px; padding: 24px; box-shadow: 0 4px 12px rgba(0,0,0,.08); }
+.sentences-prompt { font-size: 24px; line-height: 1.5; margin-bottom: 20px; overflow-wrap: anywhere; }
+#sentences-form { display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }
+#sentences-answer { display: block; width: 100%; min-width: 0; resize: vertical; padding: 12px; font: inherit; font-size: 22px; line-height: 1.5; border: 2px solid #d0d5db; border-radius: 10px; }
+#sentences-answer:focus { outline: 2px solid #3498db; outline-offset: 2px; }
+#sentences-answer[readonly] { background: #f4f6f8; }
+#sentences-next-btn { margin-top: 16px; }
+.sentences-feedback { margin-top: 20px; padding: 16px; border-radius: 12px; background: #f4f6f8; overflow-wrap: anywhere; }
+.sentences-feedback p, .sentences-review p { margin-bottom: 10px; line-height: 1.55; white-space: pre-wrap; }
+.sentences-feedback.is-correct { border-left: 4px solid #23824a; background: #eafaf1; }
+.sentences-feedback.is-wrong { border-left: 4px solid #b33a2e; background: #fff3ee; }
+.sentences-verdict { font-weight: bold; }
+.sentences-flags, .sentences-grammar { font-size: 15px; color: #425366; }
+.sentences-reference { font-size: 20px; }
+.sentences-speak { color: #2c3e50; width: 44px; height: 44px; }
+.sentences-review { margin-block: 16px; overflow-wrap: anywhere; }
+.sentences-review h3 { margin-bottom: 12px; }
+.sentences-reset { display: block; margin: 24px auto; padding: 12px 22px; border: 1px solid #526b7f; border-radius: 10px; background: #fff; color: #2c3e50; cursor: pointer; }
+.sentences-reset[hidden] { display: none; }
+.sentences-wrap button:disabled { opacity: .6; cursor: wait; }
+#sentences-score { text-align: center; margin-block: 20px; }
+@media (max-width: 480px) {
+  .sentences-card, .sentences-review { padding: 18px; }
+  .sentences-prompt { font-size: 21px; }
+  .sentences-wrap .test-btn { max-width: 100%; padding-inline: 22px; }
+}

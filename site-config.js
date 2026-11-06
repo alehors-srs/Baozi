@@ -1,5 +1,7 @@
 // Индивидуальные настройки. Обновление общего кода этот файл не заменяет.
 window.TRAINER_CONFIG = Object.freeze({
+  "aiApiUrl": "https://baozi-deepseek-api.alehors.workers.dev",
+  "aiSiteId": "baozi",
   "title": "BAOZI",
   "siteUrl": "https://alehors-srs.github.io/Baozi/",
   "customWordsKey": "BAOZI_custom_words",
@@ -10,3 +12,4 @@ window.TRAINER_CONFIG = Object.freeze({
     "names": "https://docs.google.com/spreadsheets/d/e/2PACX-1vThqLMZa5zXTaQZws0fdPuFirZ_H9TvyWTR50cp6yjYYG7riAYCnfqkOZBdT1M-fQE2yG4QKM7qgSJL/pub?gid=753580976&single=true&output=csv"
   }
 });
+

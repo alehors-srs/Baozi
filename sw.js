@@ -4,7 +4,7 @@ const CACHE_PREFIX = 'chinese-trainer:' + self.registration.scope + ':';
 const CACHE_NAME = CACHE_PREFIX + BUILD_VERSION;
 const FILES = [
   './', 'index.html',
-  ...['site-config.js', 'app.css', 'app.js', 'words.js', 'names.js', 'manifest.json']
+  ...['site-config.js', 'app.css', 'app.js', 'sentences.js', 'words.js', 'names.js', 'manifest.json']
     .map(file => file + '?v=' + BUILD_VERSION),
   'fonts/ReggaeOne-Regular.woff2', 'images/background.jpg',
   'images/favicon_16.png', 'images/favicon_32.png', 'images/favicon_48.ico',
@@ -57,4 +57,5 @@ self.addEventListener('fetch', event => {
     return response;
   })());
 });
+
 

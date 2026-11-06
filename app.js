@@ -14,6 +14,12 @@ if (!window.dictionary) {
 
 const dictionary = window.dictionary;
 
+// Новый раунд предложений получает копию текущего words, без names и lexicon.
+// Обновления Google Sheets не изменяют уже начатый раунд.
+window.TrainerDictionary = Object.freeze({
+  snapshot: () => dictionary.map(({ char, pinyin, translation }) => ({ char, pinyin, translation }))
+});
+
 // Сравниваем записи независимо от регистра, лишних пробелов и формы Unicode.
 function normalizeWordField(value) {
   return String(value ?? '')
@@ -1639,4 +1645,5 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
       .catch(error => console.warn('Не удалось включить офлайн-режим:', error));
   });
 }
+
 

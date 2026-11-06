@@ -212,18 +212,46 @@
 </div>
 
 
-<!-- TAB 9: Предложения — временная заглушка -->
+<!-- TAB 9: Предложения — русский → китайский -->
 <div class="tab-content" id="tab9">
-  <img src="images/monkeys.gif" alt="Извините! Раздел в разработке!"
-       loading="lazy" decoding="async"
-       style="display: block; width: 100%; max-width: 700px; height: auto; margin: 0 auto;">
+  <div class="sentences-wrap">
+    <p class="subtitle">Переведите 10 предложений с русского на китайский</p>
+    <div id="sentences-start" class="sentences-start">
+      <p>DeepSeek составит задания из слов и частиц вашего текущего словаря.</p>
+      <p>Введите перевод иероглифами. Проверяются смысл, грамматика и использование словаря.</p>
+      <button type="button" class="test-btn" id="sentences-start-btn">Начать раунд</button>
+    </div>
+    <p id="sentences-status" class="sentences-status" role="status" aria-live="polite"></p>
+    <div id="sentences-round" hidden>
+      <p id="sentences-progress" class="quiz-progress-text"></p>
+      <div class="sentences-card">
+        <p id="sentences-prompt" class="sentences-prompt"></p>
+        <form id="sentences-form">
+          <label for="sentences-answer">Ваш перевод:</label>
+          <textarea id="sentences-answer" rows="3" maxlength="250" lang="zh-CN"
+                    placeholder="Введите перевод иероглифами…" autocomplete="off"
+                    autocapitalize="off" spellcheck="false" required></textarea>
+          <button type="submit" class="test-btn" id="sentences-check-btn">Проверить</button>
+        </form>
+        <div id="sentences-feedback" class="sentences-feedback" aria-live="polite" hidden></div>
+        <button type="button" class="test-btn" id="sentences-next-btn" hidden>Следующая</button>
+      </div>
+    </div>
+    <div id="sentences-result" hidden>
+      <h2 id="sentences-score"></h2>
+      <div id="sentences-results-list"></div>
+    </div>
+    <button type="button" class="sentences-reset" id="sentences-reset-btn" hidden>К началу раунда</button>
+  </div>
 </div>
 
 <!-- Load dictionary from external file (works with file:// protocol) -->
 <script src="words.js"></script>
 <script src="names.js"></script>
 <script src="app.js"></script>
+<script src="sentences.js"></script>
 
 </body>
 </html>
+
 
