@@ -11,6 +11,7 @@
   if (!startBtn) return;
 
   let session = null, index = 0, results = [], busy = false, epoch = 0, controller = null;
+  let pendingJob = null;
   function element(tag, className, value) {
     const node = document.createElement(tag);
     node.className = className;
@@ -28,7 +29,11 @@
   }
   async function request(path, data, timeout) {
     if (location.protocol === 'file:') throw new Error('Для работы DeepSeek откройте опубликованный сайт.');
-    if (navigator.onLine === false) throw new Error('Для работы DeepSeek нужно подключение к интернету.');
+    if (navigator.onLine === false) {
+      const error = new Error('Для работы DeepSeek нужно подключение к интернету.');
+      error.code = 'CONNECTION';
+      throw error;
+    }
     if (!config?.aiApiUrl || !config?.aiSiteId) throw new Error('В site-config.js не указаны настройки DeepSeek.');
     const endpoint = new URL(config.aiApiUrl);
     if (endpoint.protocol !== 'https:') throw new Error('Адрес API должен начинаться с https://.');
@@ -41,7 +46,11 @@
         signal: activeController.signal, body: JSON.stringify({ ...data, site: config.aiSiteId })
       });
       let value;
-      try { value = await response.json(); } catch { throw new Error('Worker вернул непонятный ответ. Проверьте его установку.'); }
+      try { value = await response.json(); }
+      catch (error) {
+        if (!(error instanceof SyntaxError)) throw error;
+        throw new Error('Worker вернул непонятный ответ. Проверьте его установку.');
+      }
       if (!response.ok) {
         const error = new Error(typeof value.error === 'string' ? value.error : 'Не удалось выполнить запрос.');
         error.code = value.code;
@@ -49,10 +58,40 @@
       }
       return value;
     } catch (error) {
-      if (activeController.signal.aborted) throw new Error('Запрос прерван или занял слишком много времени. Попробуйте ещё раз.');
-      if (error instanceof TypeError) throw new Error('Не удалось подключиться к Worker. Проверьте интернет, адрес API и настройки доступа.');
+      if (activeController.signal.aborted || error instanceof TypeError) {
+        const problem = new Error(activeController.signal.aborted
+          ? 'Запрос прерван или занял слишком много времени. Попробуйте ещё раз.'
+          : 'Не удалось подключиться к Worker. Проверьте интернет, адрес API и настройки доступа.');
+        problem.code = 'CONNECTION';
+        throw problem;
+      }
       throw error;
     } finally { clearTimeout(timer); if (controller === activeController) controller = null; }
+  }
+  async function waitForRound(job, current) {
+    const deadline = Date.now() + 180000;
+    let delay = 0;
+    while (current === epoch && Date.now() < deadline) {
+      if (delay) await new Promise(resolve => setTimeout(resolve, delay));
+      if (current !== epoch || Date.now() >= deadline) break;
+      delay = 5000;
+      try {
+        const value = job.started
+          ? await request('/sentences/status', { jobId: job.id }, 8000)
+          : await request('/sentences/start', { jobId: job.id, words: job.words }, 8000);
+        if (value.status === 'done') return value.round;
+        if (value.status !== 'pending') throw new Error('Worker вернул неизвестный статус задания.');
+        job.started = true;
+      } catch (error) {
+        if (error.code !== 'CONNECTION') throw error;
+        if (current === epoch) setStatus('Связь прервалась. Повторяем запрос к тому же заданию…');
+        continue;
+      }
+      if (current === epoch) setStatus('DeepSeek готовит раунд. Проверяем готовность…');
+    }
+    const error = new Error('Раунд пока не получен. Нажмите «Начать раунд», чтобы продолжить ожидание.');
+    error.code = 'WAIT_TIMEOUT';
+    throw error;
   }
   function showCard() {
     progress.textContent = 'Предложение ' + (index + 1) + ' из 10';
@@ -65,7 +104,7 @@
   function reset() {
     epoch++;
     controller?.abort(); controller = null;
-    session = null; results = []; index = 0;
+    pendingJob = null; session = null; results = []; index = 0;
     round.hidden = true; result.hidden = true; start.hidden = false; resetBtn.hidden = true;
     input.value = ''; list.replaceChildren(); feedback.replaceChildren();
     startBtn.textContent = 'Начать раунд'; setBusy(false); setStatus();
@@ -77,17 +116,24 @@
     setStatus('DeepSeek составляет и проверяет 10 предложений. Это может занять до двух с половиной минут.');
     startBtn.textContent = 'Готовим раунд…';
     try {
-      const words = window.TrainerDictionary?.snapshot();
-      if (!Array.isArray(words)) throw new Error('Не удалось загрузить словарь words.');
-      const value = await request('/sentences/generate', { words }, 165000);
+      if (!pendingJob) {
+        const words = window.TrainerDictionary?.snapshot();
+        if (!Array.isArray(words)) throw new Error('Не удалось загрузить словарь words.');
+        pendingJob = { id: crypto.randomUUID(), words, started: false };
+      }
+      const value = await waitForRound(pendingJob, current);
       if (current !== epoch) return;
+      pendingJob = null;
       if (typeof value.token !== 'string' || !Number.isFinite(value.expiresAt) || !Array.isArray(value.cards) || value.cards.length !== 10 ||
           value.cards.some((card, id) => card.id !== id || typeof card.ru !== 'string')) throw new Error('Worker вернул неполный раунд. Попробуйте ещё раз.');
       session = value; results = []; index = 0;
       start.hidden = true; result.hidden = true; round.hidden = false;
       resetBtn.textContent = 'К началу раунда'; showCard();
     } catch (error) {
-      if (current === epoch) setStatus(error.message, true);
+      if (current === epoch) {
+        if (!['CONNECTION', 'WAIT_TIMEOUT', 'RATE_LIMIT'].includes(error.code)) pendingJob = null;
+        setStatus(error.message, true);
+      }
     } finally {
       if (current === epoch) { setBusy(false); startBtn.textContent = 'Начать раунд'; }
     }
