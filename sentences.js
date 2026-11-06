@@ -39,7 +39,11 @@
     if (endpoint.protocol !== 'https:') throw new Error('Адрес API должен начинаться с https://.');
     const activeController = new AbortController();
     controller = activeController;
-    const timer = setTimeout(() => activeController.abort(), timeout);
+    let timedOut = false;
+    const timer = setTimeout(() => {
+      timedOut = true;
+      activeController.abort();
+    }, timeout);
     try {
       const response = await fetch(new URL(path, endpoint), {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, cache: 'no-store',
@@ -58,10 +62,13 @@
       }
       return value;
     } catch (error) {
-      if (activeController.signal.aborted || error instanceof TypeError) {
-        const problem = new Error(activeController.signal.aborted
-          ? 'Запрос прерван или занял слишком много времени. Попробуйте ещё раз.'
-          : 'Не удалось подключиться к Worker. Проверьте интернет, адрес API и настройки доступа.');
+      if (timedOut) {
+        const problem = new Error('Истёк таймер сайта (' + timeout / 1000 + ' с).');
+        problem.code = 'REQUEST_TIMEOUT';
+        throw problem;
+      }
+      if (!activeController.signal.aborted && error instanceof TypeError) {
+        const problem = new Error('Браузер сообщил об ошибке соединения' + (error.message ? ' (' + error.message + ').' : '.'));
         problem.code = 'CONNECTION';
         throw problem;
       }
@@ -70,26 +77,29 @@
   }
   async function waitForRound(job, current) {
     const deadline = Date.now() + 180000;
-    let delay = 0;
+    let delay = 0, lastProblem = '';
     while (current === epoch && Date.now() < deadline) {
       if (delay) await new Promise(resolve => setTimeout(resolve, delay));
       if (current !== epoch || Date.now() >= deadline) break;
       delay = 5000;
+      const stage = job.started ? 'Проверка готовности раунда' : 'Запуск раунда';
       try {
         const value = job.started
           ? await request('/sentences/status', { jobId: job.id }, 8000)
-          : await request('/sentences/start', { jobId: job.id, words: job.words }, 8000);
+          : await request('/sentences/start', { jobId: job.id, words: job.words }, 20000);
+        lastProblem = '';
         if (value.status === 'done') return value.round;
         if (value.status !== 'pending') throw new Error('Worker вернул неизвестный статус задания.');
         job.started = true;
       } catch (error) {
-        if (error.code !== 'CONNECTION') throw error;
-        if (current === epoch) setStatus('Связь прервалась. Повторяем запрос к тому же заданию…');
+        if (error.code !== 'CONNECTION' && error.code !== 'REQUEST_TIMEOUT') throw error;
+        lastProblem = stage + '. ' + error.message;
+        if (current === epoch) setStatus(lastProblem + ' Повторяем запрос к тому же заданию…');
         continue;
       }
       if (current === epoch) setStatus('DeepSeek готовит раунд. Проверяем готовность…');
     }
-    const error = new Error('Раунд пока не получен. Нажмите «Начать раунд», чтобы продолжить ожидание.');
+    const error = new Error((lastProblem ? lastProblem + ' ' : '') + 'Раунд пока не получен. Нажмите «Начать раунд», чтобы продолжить ожидание.');
     error.code = 'WAIT_TIMEOUT';
     throw error;
   }
