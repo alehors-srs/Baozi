@@ -1,8 +1,8 @@
-// Standalone source. Deploy with the Durable Object binding and migration in wrangler.toml.
+// Assembled from Baozi src/index.js and src/trainer.js; behavior unchanged.
 import { DurableObject } from 'cloudflare:workers';
 
 // Cloudflare module Worker. No API key, prompts or model selection come from the browser.
-const MODEL = 'deepseek-flash';
+export const MODEL = 'deepseek-flash';
 const ORIGIN = 'https://alehors-srs.github.io';
 const SITES = new Set(['baozi', 'chinese-quiz']);
 const MAX_BODY = 300000;
@@ -12,7 +12,7 @@ const encoder = new TextEncoder();
 const punctuation = /[\s，。！？、；：,.!?;:（）()「」『』“”"‘’…—-]/gu;
 const plain = value => value.normalize('NFC').replace(punctuation, '');
 
-class ApiError extends Error {
+export class ApiError extends Error {
   constructor(status, code, message) { super(message); this.status = status; this.code = code; }
 }
 function fail(status, code, message) { throw new ApiError(status, code, message); }
@@ -20,7 +20,7 @@ function object(value) { return !!value && typeof value === 'object' && !Array.i
 function text(value, max) { return typeof value === 'string' && value.trim().length > 0 && value.length <= max; }
 
 // A token is an entire dictionary record, never a set of individual characters.
-function prepareDictionary(input) {
+export function prepareDictionary(input) {
   if (!Array.isArray(input) || input.length < 3 || input.length > 1000) {
     fail(400, 'DICTIONARY', 'Для раунда нужен словарь от 3 до 1000 записей.');
   }
@@ -44,7 +44,7 @@ function prepareDictionary(input) {
   return words;
 }
 
-function validCard(card, words) {
+export function validCard(card, words) {
   if (!object(card) || !text(card.ru, 350) || !/[А-Яа-яЁё]/u.test(card.ru) ||
       /\p{Script=Han}/u.test(card.ru) || !text(card.zh, 160) || !text(card.grammar, 500) ||
       !Array.isArray(card.tokens) || card.tokens.length < 2 || card.tokens.length > 24) return false;
@@ -190,13 +190,13 @@ async function sessionKey(secret) {
   const digest = await crypto.subtle.digest('SHA-256', encoder.encode('baozi-sentences-session-v1\0' + secret));
   return crypto.subtle.importKey('raw', digest, 'AES-GCM', false, ['encrypt', 'decrypt']);
 }
-async function sealSession(payload, secret) {
+export async function sealSession(payload, secret) {
   const iv = crypto.getRandomValues(new Uint8Array(12));
   const encrypted = await crypto.subtle.encrypt({ name: 'AES-GCM', iv, additionalData: encoder.encode('sentences-v1') },
     await sessionKey(secret), encoder.encode(JSON.stringify(payload)));
   return base64url(iv) + '.' + base64url(new Uint8Array(encrypted));
 }
-async function openSession(token, secret, site) {
+export async function openSession(token, secret, site) {
   try {
     if (!text(token, MAX_BODY - 2000)) throw new Error('Invalid token');
     const parts = token.split('.');
@@ -210,7 +210,7 @@ async function openSession(token, secret, site) {
   } catch { fail(400, 'SESSION', 'Раунд истёк или недействителен. Начните новый раунд.'); }
 }
 
-async function generateRound(words, env, signal) {
+export async function generateRound(words, env, signal) {
   const buckets = { easy: [], medium: [], hard: [] };
   const levels = Object.keys(ROUND_MIX);
   const ruSeen = new Set(), zhSeen = new Set();
@@ -274,7 +274,7 @@ async function generateRound(words, env, signal) {
   return selected;
 }
 
-async function checkTranslation(session, index, answer, env, signal) {
+export async function checkTranslation(session, index, answer, env, signal) {
   if (!Number.isInteger(index) || index < 0 || index >= 10 || !text(answer, 250)) {
     fail(400, 'ANSWER', 'Введите перевод длиной не более 250 символов.');
   }
@@ -388,18 +388,91 @@ class RoundJobHandler {
   }
 }
 
-export default {
+// One persistent check per site/checkId. Client disconnects never cancel the alarm.
+// Claim before calling DeepSeek: an alarm replay must not repeat a paid check.
+class CheckJobHandler {
+  constructor(ctx, env) { this.ctx = ctx; this.env = env; }
+
+  async fetch(request) {
+    const data = await request.json();
+    const start = new URL(request.url).pathname === '/start';
+    const storage = this.ctx.storage;
+    const job = await this.ctx.blockConcurrencyWhile(async () => {
+      const existing = await storage.get('job');
+      if (existing || !start) return existing;
+      const queued = { status: 'pending', fingerprint: data.fingerprint, session: data.session,
+        index: data.index, answer: data.answer, expires: data.session.exp };
+      await storage.transaction(async tx => {
+        await tx.put('job', queued);
+        await tx.setAlarm(Date.now());
+      });
+      return queued;
+    });
+    if (!job || job.expires <= Date.now()) {
+      return reply({ error: 'Проверка не найдена или истекла. Повторите проверку.', code: 'CHECK_EXPIRED', terminal: true }, 404, true);
+    }
+    if (job.fingerprint !== data.fingerprint) {
+      return reply({ error: 'Номер проверки уже связан с другим ответом.', code: 'CHECK_CONFLICT' }, 409, true);
+    }
+    if (job.status === 'done') return reply({ status: 'done', verdict: job.verdict }, 200, true);
+    if (job.status === 'failed') return reply({ status: 'failed', ...job.error }, 200, true);
+    return reply({ status: 'pending' }, 202, true);
+  }
+
+  async alarm() {
+    const storage = this.ctx.storage;
+    const job = await this.ctx.blockConcurrencyWhile(async () => {
+      const stored = await storage.get('job');
+      if (!stored) return null;
+      if (stored.expires <= Date.now()) { await storage.deleteAll(); return null; }
+      if (stored.status === 'running') {
+        // The execution ended without persisting a result. Do not silently call the model again.
+        await storage.transaction(async tx => {
+          await tx.put('job', { status: 'failed', fingerprint: stored.fingerprint, expires: stored.expires,
+            error: { code: 'CHECK_INTERRUPTED', error: 'Worker не смог сохранить результат проверки. Нажмите «Проверить», чтобы начать новую проверку.' } });
+          await tx.setAlarm(stored.expires);
+        });
+        return null;
+      }
+      if (stored.status !== 'pending') { await storage.setAlarm(stored.expires); return null; }
+      await storage.transaction(async tx => {
+        await tx.put('job', { ...stored, status: 'running' });
+        await tx.setAlarm(Math.min(Date.now() + 45000, stored.expires));
+      });
+      return stored;
+    });
+    if (!job) return;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 35000);
+    let result;
+    const base = { fingerprint: job.fingerprint, expires: job.expires };
+    try {
+      const verdict = await checkTranslation(job.session, job.index, job.answer, this.env, controller.signal);
+      result = { ...base, status: 'done', verdict };
+    } catch (error) {
+      result = { ...base, status: 'failed', error: error instanceof ApiError
+        ? { code: error.code, error: error.message }
+        : { code: 'INTERNAL', error: 'Внутренняя ошибка Worker. Нажмите «Проверить», чтобы начать новую проверку.' } };
+    } finally { clearTimeout(timeout); }
+    await storage.transaction(async tx => {
+      await tx.put('job', result);
+      await tx.setAlarm(job.expires);
+    });
+  }
+}
+
+const worker = {
   async fetch(request, env) {
     const origin = request.headers.get('Origin');
     const allowed = origin === ORIGIN;
     const url = new URL(request.url);
     // Health check has no upstream calls and exposes no secrets.
     if (request.method === 'GET' && (url.pathname === '/' || url.pathname === '/health')) {
-      return reply({ ok: true, service: 'Chinese sentence trainer', version: 1, model: MODEL,
+      return reply({ ok: true, service: 'Chinese sentence trainer', version: 2, checkJobsConfigured: !!env.CHECK_JOBS, model: MODEL,
         configured: !!env.DEEPSEEK_API_KEY, rateLimitConfigured: !!env.REQUEST_LIMITER && !!env.GENERATION_LIMITER }, 200, allowed);
     }
     if (!allowed) return reply({ error: 'Доступ с этого сайта не разрешён.', code: 'ORIGIN' }, 403);
-    if (!['/sentences/generate', '/sentences/check', '/sentences/start', '/sentences/status'].includes(url.pathname)) return reply({ error: 'Обработчик не найден.', code: 'NOT_FOUND' }, 404, allowed);
+    if (!['/sentences/generate', '/sentences/check', '/sentences/start', '/sentences/status', '/sentences/check/start', '/sentences/check/status'].includes(url.pathname)) return reply({ error: 'Обработчик не найден.', code: 'NOT_FOUND' }, 404, allowed);
     if (request.method === 'OPTIONS') return reply(null, 204, allowed);
     if (request.method !== 'POST') return reply({ error: 'Нужен POST-запрос.', code: 'METHOD' }, 405, allowed);
     const controller = new AbortController();
@@ -412,8 +485,7 @@ export default {
       if (!env.REQUEST_LIMITER || !env.GENERATION_LIMITER) fail(503, 'CONFIG', 'Подключите лимиты запросов Worker по инструкции установки.');
       const ip = request.headers.get('CF-Connecting-IP');
       if (!ip) fail(403, 'CLIENT', 'Не удалось определить источник запроса.');
-      const limitKey = url.pathname === '/sentences/status' ? 'round-status:' : 'requests:';
-      if (!(await env.REQUEST_LIMITER.limit({ key: limitKey + ip })).success) fail(429, 'RATE_LIMIT', 'Слишком много запросов. Подождите минуту.');
+      if (!(await env.REQUEST_LIMITER.limit({ key: 'requests:' + ip })).success) fail(429, 'RATE_LIMIT', 'Слишком много запросов. Подождите минуту.');
       if (url.pathname.endsWith('/generate') && !(await env.GENERATION_LIMITER.limit({ key: 'generate:' + ip })).success) {
         fail(429, 'RATE_LIMIT', 'Слишком много новых раундов. Подождите минуту.');
       }
@@ -437,6 +509,25 @@ export default {
       if (url.pathname === '/sentences/generate') {
         return reply(await makeRound(prepareDictionary(data.words), data.site, env, controller.signal), 200, allowed);
       }
+      if (url.pathname === '/sentences/check/start' || url.pathname === '/sentences/check/status') {
+        if (!env.CHECK_JOBS) fail(503, 'CONFIG', 'В Worker не подключено хранилище проверок. Обновите Worker.');
+        if (typeof data.checkId !== 'string' || !/^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/.test(data.checkId)) {
+          fail(400, 'CHECK_ID', 'Некорректный номер проверки.');
+        }
+        const session = await openSession(data.token, env.DEEPSEEK_API_KEY, data.site);
+        if (!Number.isInteger(data.index) || data.index < 0 || data.index >= 10 || !text(data.answer, 250)) {
+          fail(400, 'ANSWER', 'Введите перевод длиной не более 250 символов.');
+        }
+        const answer = data.answer.trim();
+        const fingerprint = base64url(new Uint8Array(await crypto.subtle.digest('SHA-256',
+          encoder.encode(JSON.stringify([data.token, data.index, answer])))));
+        const job = env.CHECK_JOBS.get(env.CHECK_JOBS.idFromName(data.site + ':' + data.checkId));
+        const start = url.pathname.endsWith('/start');
+        return await job.fetch('https://check.internal/' + (start ? 'start' : 'status'), {
+          method: 'POST', body: JSON.stringify(start
+            ? { fingerprint, session, index: data.index, answer } : { fingerprint })
+        });
+      }
       const session = await openSession(data.token, env.DEEPSEEK_API_KEY, data.site);
       return reply(await checkTranslation(session, data.index, data.answer, env, controller.signal), 200, allowed);
     } catch (error) {
@@ -446,6 +537,8 @@ export default {
     } finally { clearTimeout(timer); request.signal.removeEventListener('abort', abort); }
   }
 };
+
+
 
 export class RoundJob extends DurableObject {
   constructor(ctx, env) {
@@ -462,4 +555,15 @@ export class RoundJob extends DurableObject {
   }
 }
 
+export default worker;
+
+export class CheckJob extends DurableObject {
+  constructor(ctx, env) {
+    super(ctx, env);
+    this.handler = new CheckJobHandler(ctx, env);
+  }
+
+  fetch(request) { return this.handler.fetch(request); }
+  alarm() { return this.handler.alarm(); }
+}
 
