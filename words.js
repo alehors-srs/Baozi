@@ -989,5 +989,10 @@ window.dictionary = [
     "char": "作业",
     "pinyin": "zuòyè",
     "translation": "Домашнее задание"
+  },
+  {
+    "char": "打电话",
+    "pinyin": "dǎdiànhuà",
+    "translation": "Звонок, звонить по телефону"
   }
 ];
