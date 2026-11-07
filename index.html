@@ -217,8 +217,8 @@
   <div class="sentences-wrap">
     <p class="subtitle">Переведите 10 предложений с русского на китайский</p>
     <div id="sentences-start" class="sentences-start">
-      <p>DeepSeek составит задания из слов и частиц вашего текущего словаря.</p>
-      <p>Введите перевод иероглифами. Проверяются смысл, грамматика и использование словаря.</p>
+      <p>DeepSeek составит задания из слов вашего словаря.</p>
+      <p>Введите перевод иероглифами.</p>
       <button type="button" class="test-btn" id="sentences-start-btn">Начать раунд</button>
     </div>
     <p id="sentences-status" class="sentences-status" role="status" aria-live="polite"></p>
@@ -234,7 +234,10 @@
           <button type="submit" class="test-btn" id="sentences-check-btn">Проверить</button>
         </form>
         <div id="sentences-feedback" class="sentences-feedback" aria-live="polite" hidden></div>
-        <button type="button" class="test-btn" id="sentences-next-btn" hidden>Следующая</button>
+        <div class="sentences-navigation">
+          <button type="button" class="test-btn" id="sentences-prev-btn" disabled>Предыдущее</button>
+          <button type="button" class="test-btn" id="sentences-next-btn">Следующее</button>
+        </div>
       </div>
     </div>
     <div id="sentences-result" hidden>

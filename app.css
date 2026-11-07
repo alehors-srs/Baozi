@@ -412,7 +412,8 @@ body:has(#tab6.active, #tab8.active) .section-navigation {
 #sentences-answer { display: block; width: 100%; min-width: 0; resize: vertical; padding: 12px; font: inherit; font-size: 22px; line-height: 1.5; border: 2px solid #d0d5db; border-radius: 10px; }
 #sentences-answer:focus { outline: 2px solid #3498db; outline-offset: 2px; }
 #sentences-answer[readonly] { background: #f4f6f8; }
-#sentences-next-btn { margin-top: 16px; }
+.sentences-navigation { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 16px; }
+.sentences-navigation .test-btn { flex: 0 1 auto; padding-inline: 22px; }
 .sentences-feedback { margin-top: 20px; padding: 16px; border-radius: 12px; background: #f4f6f8; overflow-wrap: anywhere; }
 .sentences-feedback p, .sentences-review p { margin-bottom: 10px; line-height: 1.55; white-space: pre-wrap; }
 .sentences-feedback.is-correct { border-left: 4px solid #23824a; background: #eafaf1; }
