@@ -1,0 +1,33 @@
+name = "baozi-deepseek-api"
+main = "src/index.js"
+compatibility_date = "2026-11-05"
+workers_dev = true
+
+# Existing secret: DEEPSEEK_API_KEY. Never put its value in this file.
+# Approximate per-IP limits in each Cloudflare location, shared by both sites.
+# Namespace ids must be unused by other rate limiters in your account.
+[[ratelimits]]
+name = "REQUEST_LIMITER"
+namespace_id = "910501"
+simple = { limit = 50, period = 60 }
+
+[[ratelimits]]
+name = "GENERATION_LIMITER"
+namespace_id = "910502"
+simple = { limit = 15, period = 60 }
+
+[[durable_objects.bindings]]
+name = "ROUND_JOBS"
+class_name = "RoundJob"
+
+[[migrations]]
+tag = "round-jobs-v1"
+new_sqlite_classes = ["RoundJob"]
+
+[[durable_objects.bindings]]
+name = "CHECK_JOBS"
+class_name = "CheckJob"
+
+[[migrations]]
+tag = "check-jobs-v1"
+new_sqlite_classes = ["CheckJob"]
