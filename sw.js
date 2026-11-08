@@ -8,7 +8,7 @@ const FILES = [
     .map(file => file + '?v=' + BUILD_VERSION),
   'fonts/ReggaeOne-Regular.woff2', 'images/background.jpg',
   'images/favicon_16.png', 'images/favicon_32.png', 'images/favicon_48.ico',
-  'images/favicon_512.png', 'images/apple-touch-icon.png', 'images/monkeys.gif'
+  'images/favicon_512.png', 'images/apple-touch-icon.png'
 ];
 const CORE_URLS = FILES.map(path => new URL(path, self.registration.scope).href);
 
