@@ -261,11 +261,14 @@
       <p class="subtitle">Проверьте грамматику и естественность китайского текста. Можно использовать любые слова.</p>
       <form id="analysis-form" class="sentences-card">
         <label for="analysis-input">Ваш текст на китайском:</label>
-        <textarea id="analysis-input" rows="4" maxlength="1000" lang="zh-CN"
+        <textarea id="analysis-input" rows="2" maxlength="1000" lang="zh-CN"
                   autocomplete="off" autocapitalize="off" spellcheck="false" required
                   aria-describedby="analysis-limit" placeholder="Введите предложение или небольшой текст…"></textarea>
         <p id="analysis-limit" class="analysis-hint">До 1000 символов. Enter добавляет новую строку.</p>
-        <button type="submit" class="test-btn" id="analysis-submit">Проанализировать</button>
+        <div class="analysis-actions">
+          <button type="submit" class="test-btn" id="analysis-submit">Проанализировать</button>
+          <button type="button" class="test-btn" id="analysis-clear">Очистить содержимое</button>
+        </div>
       </form>
       <p id="analysis-status" class="sentences-status" role="status" aria-live="polite"></p>
       <div id="analysis-result" class="sentences-feedback" aria-live="polite" hidden></div>
@@ -281,6 +284,7 @@
 
 </body>
 </html>
+
 
 
 

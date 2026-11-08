@@ -494,13 +494,13 @@ body:has(#tab6.active, #tab8.active) .section-navigation {
 
 
 /* ИИ практика: обе панели сохраняют своё состояние при переключении. */
-.ai-practice-switch { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-bottom: 20px; }
-.ai-practice-switch .test-btn { flex: 1 1 200px; margin: 0; min-height: 44px; padding: 12px 16px; font-size: 16px; }
+.ai-practice-switch { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-bottom: 20px; }
+.ai-practice-switch .test-btn { min-width: 0; margin: 0; min-height: 44px; padding: 12px 6px; font-size: clamp(11px, 3.2vw, 16px); white-space: nowrap; }
 .ai-practice-switch button[aria-pressed="false"] { background: #eef3f8; color: #2c3e50; border: 1px solid #c3d0dc; }
 .ai-practice-switch button[aria-pressed="true"] { box-shadow: 0 0 0 2px #fff, 0 0 0 4px #2980b9; }
 #practice-testing[hidden], #practice-analysis[hidden], #analysis-result[hidden] { display: none; }
 #analysis-form { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
-#analysis-input { width: 100%; min-width: 0; resize: vertical; padding: 12px; font: inherit; font-size: 22px; line-height: 1.5; border: 2px solid #d0d5db; border-radius: 10px; }
+#analysis-input { width: 100%; min-width: 0; resize: none; overflow-y: hidden; padding: 12px; font: inherit; font-size: 22px; line-height: 1.5; border: 2px solid #d0d5db; border-radius: 10px; }
 #analysis-input:focus { outline: 2px solid #3498db; outline-offset: 2px; }
 #analysis-input[readonly] { background: #f4f6f8; }
 .analysis-hint { font-size: 13px; color: #425366; line-height: 1.5; }
@@ -509,3 +509,7 @@ body:has(#tab6.active, #tab8.active) .section-navigation {
 #analysis-result p { white-space: pre-wrap; line-height: 1.6; }
 .analysis-issue { margin-block: 14px; padding-top: 12px; border-top: 1px solid #c3d0dc; }
 #analysis-result.needs-context { border-left: 4px solid #b7791f; background: #fff8e6; }
+
+
+.analysis-actions { display: flex; gap: 8px; width: 100%; }
+.analysis-actions .test-btn { flex: 1 1 0; min-width: 0; min-height: 44px; margin: 0; padding: 12px 8px; font-size: clamp(11px, 3.2vw, 16px); }

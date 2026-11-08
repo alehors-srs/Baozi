@@ -313,6 +313,7 @@
   if (!form) return;
   const input = document.getElementById('analysis-input');
   const submit = document.getElementById('analysis-submit');
+  const clear = document.getElementById('analysis-clear');
   const status = document.getElementById('analysis-status');
   const result = document.getElementById('analysis-result');
   const panel = document.getElementById('practice-analysis');
@@ -323,7 +324,26 @@
       item.setAttribute('aria-pressed', String(active));
       document.getElementById('practice-' + item.dataset.practicePanel).hidden = !active;
     });
+    resizeAnalysisInput();
   }));
+  function resizeAnalysisInput() {
+    if (!input.getClientRects().length) return;
+    input.style.height = 'auto';
+    input.style.height = (input.scrollHeight + input.offsetHeight - input.clientHeight) + 'px';
+  }
+  // Also resize after opening the main section or changing the available width.
+  if (typeof ResizeObserver !== 'undefined') {
+    let lastWidth = 0;
+    const observer = new ResizeObserver(entries => {
+      const width = entries[0].contentRect.width;
+      if (width !== lastWidth) {
+        lastWidth = width;
+        resizeAnalysisInput();
+      }
+    });
+    observer.observe(input);
+  }
+  window.addEventListener('resize', resizeAnalysisInput);
   function setStatus(message, error = false) {
     status.textContent = message;
     status.classList.toggle('is-error', error);
@@ -424,11 +444,22 @@
     error.code = 'WAIT_TIMEOUT'; throw error;
   }
   input.addEventListener('input', () => {
+    resizeAnalysisInput();
     if (busy) return;
     if (pending && pending.text !== input.value.trim()) pending = null;
     result.hidden = true;
     submit.textContent = pending ? 'Продолжить ожидание' : 'Проанализировать';
     setStatus('');
+  });
+  clear.addEventListener('click', () => {
+    if (busy) return;
+    input.value = '';
+    pending = null;
+    result.replaceChildren();
+    result.hidden = true;
+    setStatus('');
+    submit.textContent = 'Проанализировать';
+    resizeAnalysisInput();
   });
   form.addEventListener('submit', async event => {
     event.preventDefault();
@@ -438,7 +469,7 @@
       setStatus('Введите китайский текст длиной не более 1000 символов.', true); return;
     }
     if (!pending || pending.text !== text) pending = { id: crypto.randomUUID(), text, started: false };
-    busy = true; submit.disabled = true; input.readOnly = true; panel.setAttribute('aria-busy', 'true');
+    busy = true; submit.disabled = true; clear.disabled = true; input.readOnly = true; panel.setAttribute('aria-busy', 'true');
     result.hidden = true; setStatus('DeepSeek анализирует текст…');
     try {
       const verdict = await waitForAnalysis(pending);
@@ -447,8 +478,9 @@
       if (!['WAIT_TIMEOUT', 'CONNECTION', 'RATE_LIMIT'].includes(error.code)) pending = null;
       setStatus(error.message || 'Не удалось выполнить анализ. Попробуйте ещё раз.', true);
     } finally {
-      busy = false; submit.disabled = false; input.readOnly = false; panel.setAttribute('aria-busy', 'false');
+      busy = false; submit.disabled = false; clear.disabled = false; input.readOnly = false; panel.setAttribute('aria-busy', 'false');
       submit.textContent = pending ? 'Продолжить ожидание' : 'Проанализировать';
     }
   });
 })();
+
