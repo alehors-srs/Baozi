@@ -166,7 +166,7 @@
           value.cards.some((card, id) => card.id !== id || typeof card.ru !== 'string')) throw new Error('Worker вернул неполный раунд. Попробуйте ещё раз.');
       session = value; results = []; drafts = []; pendingChecks = []; index = 0;
       start.hidden = true; result.hidden = true; round.hidden = false;
-      resetBtn.textContent = 'К началу раунда'; showCard();
+      resetBtn.textContent = 'Начать сначала'; showCard();
     } catch (error) {
       if (current === epoch) {
         if (!['CONNECTION', 'WAIT_TIMEOUT', 'RATE_LIMIT'].includes(error.code)) pendingJob = null;
