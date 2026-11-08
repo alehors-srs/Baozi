@@ -216,8 +216,6 @@
   .test-prev-btn { background: #fff; color: #2c3e50; font-size: 16px; padding: 10px 24px; border: 2px solid #d0d5db; border-radius: 10px; cursor: pointer; transition: all 0.2s; margin-right: 10px; }
   .test-prev-btn:hover:not(:disabled) { border-color: #3498db; color: #3498db; }
   .test-prev-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-  .test-next-btn { background: #3498db; color: #fff; font-size: 16px; padding: 10px 28px; border: none; border-radius: 10px; cursor: pointer; transition: background 0.2s; margin-top: 20px; }
-  .test-next-btn:hover { background: #2980b9; }
 
   /* Add word section */
   .add-word-section { max-width: 700px; width: 100%; margin: 0 auto 28px; background: #fff; border-radius: 14px; padding: 22px 26px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); box-sizing: border-box; }
@@ -385,11 +383,18 @@ body:has(#tab6.active, #tab8.active) .page-scroll-controls {
   outline: 3px solid #3498db;
   outline-offset: 3px;
 }
-#new-btn,
-#new-btn2 {
-  flex: 0 1 auto;
+#quiz-round .actions,
+#quiz-round2 .actions {
+  flex-wrap: nowrap;
+}
+#quiz-round .actions > button,
+#quiz-round2 .actions > button {
+  flex: 0 1 160px;
   width: 160px;
-  max-width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 12px;
+  white-space: nowrap;
 }
 /* Закрепляем «К разделам» в Словаре и Именах. */
 body:has(#tab6.active, #tab8.active) .section-navigation {
@@ -413,7 +418,7 @@ body:has(#tab6.active, #tab8.active) .section-navigation {
 #sentences-answer:focus { outline: 2px solid #3498db; outline-offset: 2px; }
 #sentences-answer[readonly] { background: #f4f6f8; }
 .sentences-navigation { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 16px; }
-.sentences-navigation .test-btn { flex: 0 1 auto; padding-inline: 22px; }
+.sentences-navigation .test-prev-btn { margin: 0; min-height: 44px; }
 .sentences-feedback { margin-top: 20px; padding: 16px; border-radius: 12px; background: #f4f6f8; overflow-wrap: anywhere; }
 .sentences-feedback p, .sentences-review p { margin-bottom: 10px; line-height: 1.55; white-space: pre-wrap; }
 .sentences-feedback.is-correct { border-left: 4px solid #23824a; background: #eafaf1; }
@@ -424,7 +429,7 @@ body:has(#tab6.active, #tab8.active) .section-navigation {
 .sentences-speak { color: #2c3e50; width: 44px; height: 44px; }
 .sentences-review { margin-block: 16px; overflow-wrap: anywhere; }
 .sentences-review h3 { margin-bottom: 12px; }
-.sentences-reset { display: block; margin: 24px auto; padding: 12px 22px; border: 1px solid #526b7f; border-radius: 10px; background: #fff; color: #2c3e50; cursor: pointer; }
+.sentences-reset { display: block; margin: 24px auto; }
 .sentences-reset[hidden] { display: none; }
 .sentences-wrap button:disabled { opacity: .6; cursor: wait; }
 #sentences-score { text-align: center; margin-block: 20px; }
@@ -432,4 +437,49 @@ body:has(#tab6.active, #tab8.active) .section-navigation {
   .sentences-card, .sentences-review { padding: 18px; }
   .sentences-prompt { font-size: 21px; }
   .sentences-wrap .test-btn { max-width: 100%; padding-inline: 22px; }
+}
+
+
+.dictionary-heading {
+  text-align: center;
+  margin-bottom: 14px;
+  color: #2c3e50;
+}
+.test-navigation {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  max-width: 600px;
+  margin: 0 auto 16px;
+}
+.test-navigation > button {
+  margin: 0;
+  white-space: nowrap;
+}
+.test-navigation .test-sound-toggle {
+  flex: 0 0 44px;
+}
+.test-navigation .test-prev-btn {
+  flex: 0 1 auto;
+  min-width: 0;
+  min-height: 44px;
+}
+.test-restart-wrap {
+  text-align: center;
+  margin-top: 20px;
+}
+#sentences-check-btn {
+  background: #2ecc71;
+}
+#sentences-check-btn:hover:not(:disabled) {
+  background: #27ae60;
+}
+@media (max-width: 480px) {
+  .test-navigation { gap: 6px; }
+  .test-navigation .test-prev-btn {
+    padding-inline: 8px;
+    font-size: 14px;
+  }
 }

@@ -105,7 +105,7 @@
 
   <!-- Add word form -->
   <div class="add-word-section">
-    <h3 style="text-align:center; margin-bottom:14px; color:#2c3e50;">Добавить новое слово</h3>
+    <h3 class="dictionary-heading">Добавить новое слово</h3>
     <div class="add-word-form">
       <div class="add-word-row">
         <input type="text" id="add-char" placeholder="Введите иероглиф(ы) или русское слово…" autocomplete="off">
@@ -131,6 +131,7 @@
   </div>
 
   <div class="dict-search-wrap">
+    <h3 class="dictionary-heading">Поиск по словарю</h3>
     <input type="text" class="dict-search-input" id="dict-search" placeholder="Введите иероглиф, пиньинь или русское слово…">
   </div>
   <div class="dict-results" id="dict-results"></div>
@@ -140,6 +141,7 @@
 <div class="tab-content" id="tab8">
   <p class="subtitle">Поиск по именам, пиньиню и русским словам</p>
   <div class="dict-search-wrap">
+    <h3 class="dictionary-heading">Поиск по словарю</h3>
     <input type="text" class="dict-search-input" id="names-search" placeholder="Введите имя, пиньинь или русское слово…">
   </div>
   <div class="dict-results" id="names-results"></div>
@@ -177,12 +179,14 @@
       <div class="test-progress-bar"><div class="test-progress-fill" id="test-progress-fill" style="width:0%"></div></div>
       <div class="test-progress-text" id="test-progress-text">Вопрос 1 из 10</div>
     </div>
-    <div style="text-align:center; margin-bottom:16px;">
+    <div class="test-navigation" id="test-navigation">
       <button class="test-sound-toggle" id="test-sound-toggle" title="Включить/выключить озвучку">🔊</button>
       <button class="test-prev-btn" id="test-prev-btn" disabled>← Предыдущая</button>
-      <button class="test-restart-during" id="test-restart-during-btn">Начать сначала</button>
     </div>
     <div class="test-card-wrap" id="test-card-container"></div>
+    <div class="test-restart-wrap">
+      <button class="test-restart-during" id="test-restart-during-btn">Начать сначала</button>
+    </div>
   </div>
   <div id="test-result" class="test-result" style="display:none;">
     <div class="test-result-score" id="test-score"></div>
@@ -235,8 +239,8 @@
         </form>
         <div id="sentences-feedback" class="sentences-feedback" aria-live="polite" hidden></div>
         <div class="sentences-navigation">
-          <button type="button" class="test-btn" id="sentences-prev-btn" disabled>Предыдущее</button>
-          <button type="button" class="test-btn" id="sentences-next-btn">Следующее</button>
+          <button type="button" class="test-prev-btn" id="sentences-prev-btn" disabled>Предыдущее</button>
+          <button type="button" class="test-prev-btn" id="sentences-next-btn">Следующее</button>
         </div>
       </div>
     </div>
@@ -244,7 +248,7 @@
       <h2 id="sentences-score"></h2>
       <div id="sentences-results-list"></div>
     </div>
-    <button type="button" class="sentences-reset" id="sentences-reset-btn" hidden>К началу раунда</button>
+    <button type="button" class="sentences-reset test-restart-during" id="sentences-reset-btn" hidden>К началу раунда</button>
   </div>
 </div>
 
@@ -256,5 +260,6 @@
 
 </body>
 </html>
+
 
 

@@ -1390,6 +1390,7 @@ function renderTestQuestion(isReview) {
   const q = testQuestions[testCurrentIdx];
   const container = document.getElementById('test-card-container');
   container.innerHTML = '';
+  document.querySelector('#test-navigation .test-next-btn')?.remove();
 
   const fill = document.getElementById('test-progress-fill');
   const text = document.getElementById('test-progress-text');
@@ -1448,7 +1449,7 @@ function renderTestQuestion(isReview) {
   // If reviewing a previous card, add a "Next" button to go forward
   if (isReview || q.userAnswer !== null) {
     const nextBtn = document.createElement('button');
-    nextBtn.className = 'test-next-btn';
+    nextBtn.className = 'test-prev-btn test-next-btn';
     nextBtn.textContent = 'Следующая →';
     nextBtn.addEventListener('click', () => {
       if (testQuestions[testCurrentIdx] !== q) return;
@@ -1460,7 +1461,7 @@ function renderTestQuestion(isReview) {
         showTestResult();
       }
     });
-    card.appendChild(nextBtn);
+    document.getElementById('test-navigation').appendChild(nextBtn);
   }
 
   container.appendChild(card);
@@ -1645,5 +1646,6 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
       .catch(error => console.warn('Не удалось включить офлайн-режим:', error));
   });
 }
+
 
 
