@@ -577,3 +577,26 @@ body:has(#tab6.active, #tab8.active) .section-navigation {
   overflow-wrap: normal;
   line-height: 1.3;
 }
+/* Размеры подразделов как у главных разделов */
+
+.ai-practice-switch {
+  width: calc((min(100%, 540px) - 24px) / 3 * 2 + 12px);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0 auto 20px;
+}
+.ai-practice-switch .test-btn {
+  width: 100%;
+  min-height: 0;
+  aspect-ratio: 1.5;
+  padding: 12px;
+}
+
+/* На телефоне главные разделы тоже расположены в две колонки */
+@media (max-width: 480px) {
+  .ai-practice-switch {
+    width: 100%;
+    max-width: 360px;
+    gap: 10px;
+  }
+}
