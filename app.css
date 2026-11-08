@@ -128,7 +128,15 @@
   .loading { text-align: center; font-size: 18px; color: #95a5a6; padding: 40px; }
   
   /* Dictionary search */
-  .dict-search-wrap { max-width: 700px; margin: 0 auto 24px; }
+  .dict-search-wrap {
+    max-width: 700px;
+    width: 100%;
+    margin: 0 auto 24px;
+    padding: 22px 26px;
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+  }
   .dict-search-input { width: 100%; padding: 14px 18px; font-size: 18px; border: 2px solid #d0d5db; border-radius: 12px; outline: none; transition: border-color 0.2s; }
   .dict-search-input:focus { border-color: #3498db; }
   .dict-results { max-width: 700px; margin: 0 auto; }
@@ -272,7 +280,7 @@ button { touch-action: manipulation; }
 @media (max-width: 768px) {
   body { padding: 16px; }
   h1 { font-size: 26px; margin-bottom: 18px; }
-  .card, .sent-card, .add-word-section { padding: 18px; }
+  .card, .sent-card, .add-word-section, .dict-search-wrap { padding: 18px; }
   .test-card { padding: 24px 18px; }
   .test-start-screen, .test-result { padding: 28px 8px; }
   button, input, select { min-height: 44px; }
