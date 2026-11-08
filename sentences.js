@@ -484,3 +484,69 @@
   });
 })();
 
+// Подгонка названий переключателей: до двух строк.
+(() => {
+  const menu = document.querySelector('.ai-practice-switch');
+  if (!menu) return;
+
+  const labels = [...menu.querySelectorAll('button')].map(button => {
+    const label = document.createElement('span');
+    label.className = 'ai-practice-label';
+    label.textContent = button.textContent.trim();
+    button.replaceChildren(label);
+    return label;
+  });
+
+  function fitLabels() {
+    if (!menu.getClientRects().length) return;
+
+    labels.forEach(label => {
+      // Сначала возвращаем исходный размер из CSS.
+      label.style.fontSize = '';
+
+      let size = parseFloat(getComputedStyle(label).fontSize);
+
+      while (size > 12) {
+        const lineHeight =
+          parseFloat(getComputedStyle(label).lineHeight);
+
+        const fitsWidth =
+          label.scrollWidth <= label.clientWidth + 1;
+
+        const fitsTwoLines =
+          label.getBoundingClientRect().height <= lineHeight * 2 + 1;
+
+        if (fitsWidth && fitsTwoLines) break;
+
+        size = Math.max(12, size - 1);
+        label.style.fontSize = size + 'px';
+      }
+    });
+  }
+
+  let frame;
+  function scheduleFit() {
+    cancelAnimationFrame(frame);
+    frame = requestAnimationFrame(fitLabels);
+  }
+
+  if ('ResizeObserver' in window) {
+    let previousWidth = -1;
+
+    new ResizeObserver(entries => {
+      const width = entries[0].contentRect.width;
+      if (width === previousWidth) return;
+      previousWidth = width;
+      scheduleFit();
+    }).observe(menu);
+  }
+
+  window.addEventListener('resize', scheduleFit);
+
+  if (document.fonts) {
+    document.fonts.ready.then(scheduleFit);
+    document.fonts.addEventListener('loadingdone', scheduleFit);
+  }
+
+  scheduleFit();
+})();

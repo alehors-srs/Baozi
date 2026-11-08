@@ -504,7 +504,8 @@ body:has(#tab6.active, #tab8.active) .section-navigation {
   font-family: 'Reggae One', 'Segoe UI', Arial, sans-serif;
   font-weight: 400;
   font-size: clamp(18px, 2.5vw, 20px);
-  white-space: nowrap;
+  white-space: normal;
+  line-height: 1.3;
 
   border: 1px solid rgba(44, 62, 80, 0.30);
   border-radius: 16px;
@@ -565,4 +566,14 @@ body:has(#tab6.active, #tab8.active) .section-navigation {
 
 #analysis-clear:hover:not(:disabled) {
   background: #c0392b;
+}
+
+.ai-practice-label {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  white-space: normal;
+  word-break: normal;
+  overflow-wrap: normal;
+  line-height: 1.3;
 }
