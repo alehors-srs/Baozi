@@ -29,7 +29,7 @@
     nextBtn.disabled = value;
     prevBtn.disabled = value || index === 0;
     input.readOnly = value || !!results[index];
-    document.getElementById('tab9').setAttribute('aria-busy', String(value));
+    document.getElementById('practice-testing').setAttribute('aria-busy', String(value));
   }
   async function request(path, data, timeout) {
     if (location.protocol === 'file:') throw new Error('Для работы DeepSeek откройте опубликованный сайт.');
@@ -302,4 +302,153 @@
     resetBtn.textContent = 'Новый раунд'; setStatus();
   });
   resetBtn.addEventListener('click', reset);
+})();
+
+
+// Free analysis has its own request state and never reads TrainerDictionary.
+(() => {
+  'use strict';
+  const buttons = [...document.querySelectorAll('[data-practice-panel]')];
+  const form = document.getElementById('analysis-form');
+  if (!form) return;
+  const input = document.getElementById('analysis-input');
+  const submit = document.getElementById('analysis-submit');
+  const status = document.getElementById('analysis-status');
+  const result = document.getElementById('analysis-result');
+  const panel = document.getElementById('practice-analysis');
+  let busy = false, pending = null;
+  buttons.forEach(button => button.addEventListener('click', () => {
+    buttons.forEach(item => {
+      const active = item === button;
+      item.setAttribute('aria-pressed', String(active));
+      document.getElementById('practice-' + item.dataset.practicePanel).hidden = !active;
+    });
+  }));
+  function setStatus(message, error = false) {
+    status.textContent = message;
+    status.classList.toggle('is-error', error);
+  }
+  function paragraph(target, value, className = '') {
+    const node = document.createElement('p');
+    node.className = className;
+    node.textContent = value;
+    target.append(node);
+  }
+  function block(title, value) {
+    const heading = document.createElement('h3');
+    heading.textContent = title;
+    result.append(heading);
+    paragraph(result, value);
+  }
+  function display(value) {
+    if (!value || !['correct', 'incorrect', 'needs_context'].includes(value.verdict) ||
+        ['translation', 'grammar', 'naturalness', 'corrected', 'pinyin'].some(key => typeof value[key] !== 'string') ||
+        !Array.isArray(value.issues) || value.issues.length > 15 || value.issues.some(issue =>
+          !issue || !['error', 'style', 'context'].includes(issue.type) ||
+          ['fragment', 'correction', 'explanation'].some(key => typeof issue[key] !== 'string'))) {
+      throw new Error('Worker вернул неполный анализ. Обновите Worker и повторите запрос.');
+    }
+    result.replaceChildren();
+    result.className = 'sentences-feedback ' + ({ correct: 'is-correct', incorrect: 'is-wrong', needs_context: 'needs-context' })[value.verdict];
+    block(({ correct: '✓ Предложение составлено верно', incorrect: 'Нужно исправить', needs_context: 'Требуется контекст' })[value.verdict], value.translation);
+    block('Грамматика', value.grammar);
+    block('Естественность', value.naturalness);
+    if (value.issues.length) {
+      const heading = document.createElement('h3'); heading.textContent = 'Разбор фрагментов'; result.append(heading);
+      for (const issue of value.issues) {
+        const row = document.createElement('div'); row.className = 'analysis-issue';
+        paragraph(row, ({ error: 'Ошибка', style: 'Можно сказать естественнее', context: 'Нужен контекст' })[issue.type], 'sentences-verdict');
+        paragraph(row, issue.fragment + (issue.correction ? ' → ' + issue.correction : ''));
+        paragraph(row, issue.explanation); result.append(row);
+      }
+    }
+    block(value.verdict === 'needs_context' ? 'Вариант с учётом замечаний' : 'Итоговый вариант', value.corrected);
+    paragraph(result, value.pinyin);
+    result.hidden = false;
+  }
+  async function request(path, job) {
+    const config = window.TRAINER_CONFIG;
+    if (location.protocol === 'file:') throw new Error('Для работы DeepSeek откройте опубликованный сайт.');
+    if (navigator.onLine === false) {
+      const error = new Error('Нет подключения к интернету.'); error.code = 'CONNECTION'; throw error;
+    }
+    if (!config?.aiApiUrl || !config?.aiSiteId) throw new Error('В site-config.js не указаны настройки DeepSeek.');
+    const endpoint = new URL(config.aiApiUrl);
+    if (endpoint.protocol !== 'https:') throw new Error('Адрес API должен начинаться с https://.');
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 10000);
+    try {
+      const url = new URL(path, endpoint); url.searchParams.set('probe', crypto.randomUUID());
+      const response = await fetch(url, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, cache: 'no-store', signal: controller.signal,
+        body: JSON.stringify({ site: config.aiSiteId, checkId: job.id, text: job.text })
+      });
+      let value;
+      try { value = await response.json(); }
+      catch (error) {
+        if (!(error instanceof SyntaxError)) throw error;
+        throw new Error('Worker вернул непонятный ответ. Проверьте его установку.');
+      }
+      if (!response.ok) {
+        const error = new Error(typeof value?.error === 'string' ? value.error : 'Не удалось выполнить анализ.');
+        error.code = value?.code; error.terminal = value?.terminal === true; throw error;
+      }
+      return value;
+    } catch (error) {
+      if (controller.signal.aborted || error instanceof TypeError) {
+        const problem = new Error('Не удалось получить ответ сервера.'); problem.code = 'CONNECTION'; throw problem;
+      }
+      throw error;
+    } finally { clearTimeout(timer); }
+  }
+  async function waitForAnalysis(job) {
+    const deadline = Date.now() + 90000;
+    while (Date.now() < deadline) {
+      try {
+        const value = await request(job.started ? '/analysis/status' : '/analysis/start', job);
+        if (value.status === 'done') return value.verdict;
+        if (value.status === 'failed') {
+          const error = new Error(value.error || 'Анализ не выполнен. Повторите запрос.');
+          error.code = value.code; error.terminal = true; throw error;
+        }
+        if (value.status !== 'pending') throw new Error('Worker вернул неизвестный статус анализа.');
+        job.started = true;
+        setStatus('DeepSeek анализирует текст. Ожидаем результат…');
+      } catch (error) {
+        if (error.code !== 'CONNECTION') throw error;
+        setStatus('Проверяем соединение и ожидаем результат того же анализа…');
+      }
+      await new Promise(resolve => setTimeout(resolve, 5000));
+    }
+    const error = new Error('Результат пока не получен. Нажмите «Продолжить ожидание» — повторный анализ не запустится.');
+    error.code = 'WAIT_TIMEOUT'; throw error;
+  }
+  input.addEventListener('input', () => {
+    if (busy) return;
+    if (pending && pending.text !== input.value.trim()) pending = null;
+    result.hidden = true;
+    submit.textContent = pending ? 'Продолжить ожидание' : 'Проанализировать';
+    setStatus('');
+  });
+  form.addEventListener('submit', async event => {
+    event.preventDefault();
+    if (busy) return;
+    const text = input.value.trim();
+    if (!text || text.length > 1000 || !/\p{Script=Han}/u.test(text)) {
+      setStatus('Введите китайский текст длиной не более 1000 символов.', true); return;
+    }
+    if (!pending || pending.text !== text) pending = { id: crypto.randomUUID(), text, started: false };
+    busy = true; submit.disabled = true; input.readOnly = true; panel.setAttribute('aria-busy', 'true');
+    result.hidden = true; setStatus('DeepSeek анализирует текст…');
+    try {
+      const verdict = await waitForAnalysis(pending);
+      display(verdict); pending = null; setStatus('Анализ завершён.');
+    } catch (error) {
+      if (!['WAIT_TIMEOUT', 'CONNECTION', 'RATE_LIMIT'].includes(error.code)) pending = null;
+      setStatus(error.message || 'Не удалось выполнить анализ. Попробуйте ещё раз.', true);
+    } finally {
+      busy = false; submit.disabled = false; input.readOnly = false; panel.setAttribute('aria-busy', 'false');
+      submit.textContent = pending ? 'Продолжить ожидание' : 'Проанализировать';
+    }
+  });
 })();

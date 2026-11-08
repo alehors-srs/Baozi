@@ -491,3 +491,21 @@ body:has(#tab6.active, #tab8.active) .section-navigation {
     font-size: 14px;
   }
 }
+
+
+/* ИИ практика: обе панели сохраняют своё состояние при переключении. */
+.ai-practice-switch { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-bottom: 20px; }
+.ai-practice-switch .test-btn { flex: 1 1 200px; margin: 0; min-height: 44px; padding: 12px 16px; font-size: 16px; }
+.ai-practice-switch button[aria-pressed="false"] { background: #eef3f8; color: #2c3e50; border: 1px solid #c3d0dc; }
+.ai-practice-switch button[aria-pressed="true"] { box-shadow: 0 0 0 2px #fff, 0 0 0 4px #2980b9; }
+#practice-testing[hidden], #practice-analysis[hidden], #analysis-result[hidden] { display: none; }
+#analysis-form { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
+#analysis-input { width: 100%; min-width: 0; resize: vertical; padding: 12px; font: inherit; font-size: 22px; line-height: 1.5; border: 2px solid #d0d5db; border-radius: 10px; }
+#analysis-input:focus { outline: 2px solid #3498db; outline-offset: 2px; }
+#analysis-input[readonly] { background: #f4f6f8; }
+.analysis-hint { font-size: 13px; color: #425366; line-height: 1.5; }
+#analysis-result h3 { margin: 16px 0 8px; font-size: 17px; }
+#analysis-result h3:first-child { margin-top: 0; }
+#analysis-result p { white-space: pre-wrap; line-height: 1.6; }
+.analysis-issue { margin-block: 14px; padding-top: 12px; border-top: 1px solid #c3d0dc; }
+#analysis-result.needs-context { border-left: 4px solid #b7791f; background: #fff8e6; }
