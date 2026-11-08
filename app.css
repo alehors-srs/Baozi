@@ -495,7 +495,7 @@ body:has(#tab6.active, #tab8.active) .section-navigation {
 
 /* ИИ практика: обе панели сохраняют своё состояние при переключении. */
 .ai-practice-switch { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-bottom: 20px; }
-.ai-practice-switch .test-btn { min-width: 0; margin: 0; min-height: 44px; padding: 12px 6px; font-size: clamp(11px, 3.2vw, 16px); white-space: nowrap; }
+.ai-practice-switch .test-btn { min-width: 0; margin: 0; min-height: 88px; padding: 12px 6px; font-size: clamp(14px, 3.2vw, 16px); white-space: nowrap; }
 .ai-practice-switch button[aria-pressed="false"] { background: #eef3f8; color: #2c3e50; border: 1px solid #c3d0dc; }
 .ai-practice-switch button[aria-pressed="true"] { box-shadow: 0 0 0 2px #fff, 0 0 0 4px #2980b9; }
 #practice-testing[hidden], #practice-analysis[hidden], #analysis-result[hidden] { display: none; }
@@ -513,3 +513,23 @@ body:has(#tab6.active, #tab8.active) .section-navigation {
 
 .analysis-actions { display: flex; gap: 8px; width: 100%; }
 .analysis-actions .test-btn { flex: 1 1 0; min-width: 0; min-height: 44px; margin: 0; padding: 12px 8px; font-size: clamp(11px, 3.2vw, 16px); }
+
+/* Проанализировать */
+#analysis-submit {
+  background: #27ae60;
+  color: #fff;
+}
+
+#analysis-submit:hover:not(:disabled) {
+  background: #219653;
+}
+
+/* Очистить содержимое */
+#analysis-clear {
+  background: #e74c3c;
+  color: #fff;
+}
+
+#analysis-clear:hover:not(:disabled) {
+  background: #c0392b;
+}
