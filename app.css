@@ -495,9 +495,42 @@ body:has(#tab6.active, #tab8.active) .section-navigation {
 
 /* ИИ практика: обе панели сохраняют своё состояние при переключении. */
 .ai-practice-switch { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-bottom: 20px; }
-.ai-practice-switch .test-btn { min-width: 0; margin: 0; min-height: 88px; padding: 12px 6px; font-size: clamp(14px, 3.2vw, 16px); white-space: nowrap; }
-.ai-practice-switch button[aria-pressed="false"] { background: #eef3f8; color: #2c3e50; border: 1px solid #c3d0dc; }
-.ai-practice-switch button[aria-pressed="true"] { box-shadow: 0 0 0 2px #fff, 0 0 0 4px #2980b9; }
+.ai-practice-switch .test-btn {
+  min-width: 0;
+  margin: 0;
+  min-height: 88px;
+  padding: 12px 6px;
+
+  font-family: 'Reggae One', 'Segoe UI', Arial, sans-serif;
+  font-weight: 400;
+  font-size: clamp(18px, 2.5vw, 20px);
+  white-space: nowrap;
+
+  border: 1px solid rgba(44, 62, 80, 0.30);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.50);
+  color: #2c3e50;
+  box-shadow: none;
+
+  transition: background 0.2s, border-color 0.2s;
+}
+
+/* Выбранный подраздел */
+.ai-practice-switch .test-btn[aria-pressed="true"] {
+  background: rgba(255, 255, 255, 0.60);
+  border-color: #385c47;
+}
+
+/* Наведение на невыбранный подраздел */
+.ai-practice-switch .test-btn:hover:not([aria-pressed="true"]) {
+  background: rgba(255, 255, 255, 0.70);
+}
+
+/* Фокус при управлении клавиатурой */
+.ai-practice-switch .test-btn:focus-visible {
+  outline: 3px solid #3498db;
+  outline-offset: 3px;
+}
 #practice-testing[hidden], #practice-analysis[hidden], #analysis-result[hidden] { display: none; }
 #analysis-form { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
 #analysis-input { width: 100%; min-width: 0; resize: none; overflow-y: hidden; padding: 12px; font: inherit; font-size: 22px; line-height: 1.5; border: 2px solid #d0d5db; border-radius: 10px; }
