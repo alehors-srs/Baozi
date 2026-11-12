@@ -26,6 +26,8 @@
           aria-controls="tab2" aria-expanded="false"><span class="tab-label">АБВ - 字</span></button>
   <button type="button" class="tab" data-tab="tab7"
           aria-controls="tab7" aria-expanded="false"><span class="tab-label">Тест</span></button>
+  <button type="button" class="tab" data-tab="tab10"
+          aria-controls="tab10" aria-expanded="false"><span class="tab-label">Иероглифы</span></button>
   <button type="button" class="tab" data-tab="tab9"
           aria-controls="tab9" aria-expanded="false"><span class="tab-label">Предложения</span></button>
   <button type="button" class="tab" data-tab="tab6"
@@ -216,6 +218,65 @@
 </div>
 
 
+<!-- TAB 10: Ввод показанного иероглифа -->
+<div class="tab-content" id="tab10">
+  <div class="hanzi-practice">
+    <div id="hanzi-start" class="test-start-screen">
+      <h2>Ввод иероглифов</h2>
+      <p class="subtitle">Введите тот же иероглиф, который показан на карточке.</p>
+      <div class="test-settings hanzi-settings">
+        <div>
+          <label for="hanzi-count">Количество карточек:</label>
+          <select id="hanzi-count" class="test-count-select">
+            <option value="10">10 карточек</option>
+            <option value="25">25 карточек</option>
+          </select>
+        </div>
+      </div>
+      <p id="hanzi-pool-info" class="subtitle"></p>
+      <p class="subtitle">Используйте китайскую клавиатуру, чтобы ввести показанный знак, затем нажмите «Проверить».</p>
+      <p id="hanzi-status" role="status" aria-live="polite"></p>
+      <button type="button" id="hanzi-start-btn" class="test-btn">Начать раунд</button>
+    </div>
+    <div id="hanzi-round" hidden>
+      <p id="hanzi-progress" class="quiz-progress-text"></p>
+      <p id="hanzi-stage" class="subtitle" role="status"></p>
+      <div class="hanzi-navigation" role="group" aria-label="Озвучка и просмотр карточек">
+        <button type="button" id="hanzi-sound-toggle" class="test-sound-toggle" aria-pressed="true"
+                aria-label="Отключить озвучку ответов" title="Отключить озвучку ответов">🔊</button>
+        <button type="button" id="hanzi-prev-btn" class="test-prev-btn" disabled>← Предыдущая</button>
+      </div>
+      <div id="hanzi-card" class="card">
+        <div class="hanzi-prompt">
+          <div id="hanzi-char" class="hanzi-char" lang="zh-CN"></div>
+          <button type="button" id="hanzi-play-btn" class="test-sound-toggle" hidden
+                  aria-label="Прослушать ответ еще раз" title="Прослушать ответ еще раз">🔊</button>
+        </div>
+        <form id="hanzi-form" class="card-body">
+          <label for="hanzi-answer">Ваш иероглиф:</label>
+          <input id="hanzi-answer" type="text" lang="zh-CN" placeholder="Введите показанный иероглиф"
+                 autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"
+                 maxlength="40" aria-describedby="hanzi-feedback">
+          <div class="hanzi-actions">
+            <button type="submit" id="hanzi-check-btn" class="test-btn">Проверить</button>
+            <button type="button" id="hanzi-next-btn" class="test-btn" hidden>Следующая</button>
+          </div>
+        </form>
+        <div id="hanzi-feedback" aria-live="polite"></div>
+      </div>
+      <div class="test-restart-wrap">
+        <button type="button" id="hanzi-reset-btn" class="test-restart-during">Начать сначала</button>
+      </div>
+    </div>
+    <div id="hanzi-result" class="test-result" hidden>
+      <div id="hanzi-score" class="test-result-score"></div>
+      <p id="hanzi-result-message" class="test-result-msg"></p>
+      <button type="button" id="hanzi-restart-btn" class="test-restart-btn">Новый раунд</button>
+      <div id="hanzi-results-list" class="results-list"></div>
+    </div>
+  </div>
+</div>
+
 <!-- TAB 9: ИИ практика -->
 <div class="tab-content" id="tab9">
   <div class="sentences-wrap">
@@ -284,6 +345,7 @@
 
 </body>
 </html>
+
 
 
 
