@@ -227,12 +227,12 @@ assert.equal(spoken[0].char,'你');
 assert(playback.isPending());
 spoken[0].end(); spoken[0].end();
 assert.equal(timers.size,1);
-run(500);
+run(505);
 assert.equal(advances,1);
 assert(!playback.isPending());
 playback.schedule(false,'好');
 assert.equal(spoken.length,1);
-run(1000);
+run(1005);
 assert.equal(advances,2);
 playback.schedule(true,'我');
 const staleEnd=spoken.at(-1).end;
@@ -245,7 +245,7 @@ playback.schedule(true,'他');
 const earlierEnd=spoken.at(-1).end;
 playback.schedule(false,'他'); // mute while sound is playing
 assert(stops>0);
-earlierEnd(); run(1000);
+earlierEnd(); run(1005);
 assert.equal(advances,3);
 playback.schedule(true,'国');
 playback.play('国'); // manual replay pauses automatic advance
@@ -255,18 +255,18 @@ assert.equal(timers.size,0);
 assert.equal(advances,3);
 playback.schedule(true,'人');
 run(8000); // speech API without an onend callback cannot stall the round
-run(500);
+run(505);
 assert.equal(advances,4);
 playback.schedule(true,'天');
 active=false;
-spoken.at(-1).end(); run(500);
+spoken.at(-1).end(); run(505);
 assert.equal(advances,4); // a hidden section never advances
 let syncAdvances=0;
 const sync=p.createPlayback({
  speak(c,end){ end(); },stop(){},setTimer(fn,ms){const id=++serial;timers.set(id,{fn,ms});return id;},
  clearTimer(id){timers.delete(id);},onAdvance(){syncAdvances++;},isActive(){return true;}
 });
-sync.schedule(true,'大');run(500);assert.equal(syncAdvances,1);
+sync.schedule(true,'大');run(505);assert.equal(syncAdvances,1);
 sync.cancel();playback.cancel();
 console.log('Hanzi: immutable history, drafts, reinforcement, audio end/timeout/mute/replay/cancel races OK');
 """
@@ -274,6 +274,51 @@ console.log('Hanzi: immutable history, drafts, reinforcement, audio end/timeout/
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
 
+
+    def test_hanzi_all_readings_examples_and_snapshot(self):
+        script = r"""
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const context={window:{}};vm.createContext(context);
+const logic=fs.readFileSync('app.js','utf8').split('// === HANZI PRACTICE:')[1].split('\nfunction initializeHanziPractice()')[0];
+vm.runInContext('// === HANZI PRACTICE:'+logic+'\nthis.p=HanziPractice;',context);
+const p=context.p;
+assert.equal(p.getReadings('好').join(','),'hǎo,hào');
+assert.equal(p.getReadings('乐').join(','),'lè,yuè,yào,lào');
+assert.equal(p.getReadings('一').join(','),'yī');
+assert(p.getReadings('不').includes('bù'));
+assert.equal(p.getReadings('儿').join(','),'ér');
+assert.equal(p.getReadings('龘').length,0);
+let requested;
+const live=p.getReadings('龘',{pinyin(char,options){requested={char,...options};return ['DÁ','dá','龘',''];}});
+assert.equal(live.join(','),'dá');assert(requested.multiple);assert.equal(requested.type,'array');
+assert.equal(requested.toneType,'symbol');
+assert.equal(p.getReadings('好',{pinyin(){throw new Error('offline');}}).join(','),'hǎo,hào');
+vm.runInContext(fs.readFileSync('words.js','utf8')+fs.readFileSync('names.js','utf8'),context);
+const pool=p.buildPool(context.window.dictionary,context.window.names);
+assert(pool.cards.every(c=>c.readings.length>0));
+assert(pool.cards.every(c=>c.examples.length>0 && c.examples.length<=3));
+const namesCard=pool.cards.find(c=>c.char==='李');
+assert(namesCard.examples.some(e=>e.char.includes('李')));
+const sources=[{char:'你好',pinyin:'nǐhǎo',translation:'Привет'},
+ {char:'好',pinyin:'hǎo',translation:'хорошо'}];
+const examples=p.buildPool(sources,[sources[0]]).cards.find(c=>c.char==='好').examples;
+assert.equal(examples.length,2); // duplicate source entries do not duplicate examples
+assert.equal(examples[0].translation,'Привет'); // preserve meaning of the whole word
+const round=p.begin(p.createRound(pool.cards,10,a=>[...a]));
+const first=round.current[0];
+const originalReadings=first.readings.join(','), originalExample=first.examples[0].translation;
+pool.cards[0].readings.splice(0);pool.cards[0].examples[0].translation='changed';
+assert.equal(first.readings.join(','),originalReadings);
+assert.equal(first.examples[0].translation,originalExample);
+const accepted=p.answer(round,first.char);
+assert.equal(accepted.correct,true);assert.equal(accepted.readings.join(','),originalReadings);
+console.log('Hanzi pinyin: all readings, live/offline fallback, name/word examples, metadata snapshots OK');
+"""
+        result=subprocess.run(['node','-e',script],cwd=ROOT,text=True,capture_output=True)
+        self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+
+
 if __name__ == '__main__':
     unittest.main()
+
 
