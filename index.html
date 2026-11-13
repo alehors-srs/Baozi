@@ -244,7 +244,6 @@
       <div class="hanzi-navigation" role="group" aria-label="Озвучка и просмотр карточек">
         <button type="button" id="hanzi-sound-toggle" class="test-sound-toggle" aria-pressed="true"
                 aria-label="Отключить озвучку ответов" title="Отключить озвучку ответов">🔊</button>
-        <button type="button" id="hanzi-prev-btn" class="test-prev-btn" disabled>← Предыдущая</button>
       </div>
       <div id="hanzi-card" class="card">
         <div class="hanzi-prompt">
@@ -258,11 +257,17 @@
                  autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"
                  maxlength="40" aria-describedby="hanzi-feedback">
           <div class="hanzi-actions">
+            <button type="button" id="hanzi-prev-btn" class="test-btn" disabled>Предыдущая</button>
             <button type="submit" id="hanzi-check-btn" class="test-btn">Проверить</button>
-            <button type="button" id="hanzi-next-btn" class="test-btn" hidden>Следующая</button>
+            <button type="button" id="hanzi-next-btn" class="test-btn" disabled>Следующая</button>
           </div>
         </form>
         <div id="hanzi-feedback" aria-live="polite"></div>
+      </div>
+      <div class="hanzi-hint-wrap">
+        <button type="button" id="hanzi-hint-toggle" class="hint-link"
+                aria-expanded="false" aria-controls="hanzi-hint">показать подсказку</button>
+        <div id="hanzi-hint" class="hint" hidden></div>
       </div>
       <div class="test-restart-wrap">
         <button type="button" id="hanzi-reset-btn" class="test-restart-during">Начать сначала</button>
@@ -345,6 +350,7 @@
 
 </body>
 </html>
+
 
 
 

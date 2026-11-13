@@ -1653,6 +1653,237 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 
 // === HANZI PRACTICE: ввод показанного иероглифа ===
 const HanziPractice = (() => {
+  // Чтения отдельных знаков: pinyin-pro 3.29.4, multiple: true.
+  // Встроенный резерв для текущих словарей; новые знаки обслуживает подключенная библиотека.
+  const fallbackReadings = Object.freeze({
+    "你": ["nǐ"],
+    "好": ["hǎo", "hào"],
+    "您": ["nín"],
+    "对": ["duì"],
+    "不": ["bù", "fǒu"],
+    "起": ["qǐ"],
+    "没": ["méi", "mò"],
+    "关": ["guān"],
+    "系": ["xì", "jì"],
+    "们": ["men", "mén"],
+    "我": ["wǒ"],
+    "他": ["tā"],
+    "六": ["liù", "lù"],
+    "一": ["yī"],
+    "谢": ["xiè"],
+    "客": ["kè"],
+    "气": ["qì"],
+    "再": ["zài"],
+    "见": ["jiàn", "xiàn"],
+    "叫": ["jiào"],
+    "三": ["sān"],
+    "八": ["bā"],
+    "十": ["shí"],
+    "二": ["èr"],
+    "什": ["shén", "shí"],
+    "么": ["me", "mó", "ma", "yāo"],
+    "名": ["míng"],
+    "字": ["zì"],
+    "吗": ["ma", "má", "mǎ"],
+    "学": ["xué"],
+    "生": ["shēng"],
+    "老": ["lǎo"],
+    "师": ["shī"],
+    "国": ["guó"],
+    "人": ["rén"],
+    "美": ["měi"],
+    "中": ["zhōng", "zhòng"],
+    "是": ["shì"],
+    "日": ["rì"],
+    "本": ["běn"],
+    "俄": ["é"],
+    "罗": ["luó"],
+    "斯": ["sī"],
+    "她": ["tā", "jiě"],
+    "这": ["zhè", "zhèi"],
+    "书": ["shū"],
+    "的": ["de", "dì", "dí", "dī"],
+    "汉": ["hàn"],
+    "语": ["yǔ", "yù"],
+    "哪": ["nǎ", "na", "nǎi", "né", "něi"],
+    "呢": ["ne", "ní"],
+    "同": ["tóng", "tòng"],
+    "朋": ["péng"],
+    "友": ["yǒu"],
+    "谁": ["shuí", "shéi"],
+    "法": ["fǎ"],
+    "个": ["gè", "gě"],
+    "家": ["jiā", "jia", "jie"],
+    "有": ["yǒu", "yòu"],
+    "口": ["kǒu"],
+    "女": ["nǚ", "rǔ"],
+    "儿": ["ér"],
+    "几": ["jǐ", "jī"],
+    "岁": ["suì"],
+    "了": ["le", "liǎo"],
+    "今": ["jīn"],
+    "年": ["nián"],
+    "四": ["sì"],
+    "五": ["wǔ"],
+    "多": ["duō"],
+    "大": ["dà", "dài"],
+    "千": ["qiān"],
+    "万": ["wàn", "mò"],
+    "两": ["liǎng"],
+    "七": ["qī"],
+    "九": ["jiǔ"],
+    "百": ["bǎi"],
+    "会": ["huì", "kuài"],
+    "说": ["shuō", "shuì", "yuè"],
+    "妈": ["mā"],
+    "菜": ["cài"],
+    "很": ["hěn"],
+    "吃": ["chī"],
+    "做": ["zuò"],
+    "写": ["xiě"],
+    "怎": ["zěn"],
+    "读": ["dú", "dòu"],
+    "都": ["dōu", "dū"],
+    "英": ["yīng"],
+    "需": ["xū"],
+    "求": ["qiú"],
+    "昨": ["zuó"],
+    "天": ["tiān"],
+    "明": ["míng"],
+    "星": ["xīng"],
+    "期": ["qī", "jī"],
+    "月": ["yuè"],
+    "号": ["hào", "háo"],
+    "请": ["qǐng"],
+    "问": ["wèn"],
+    "去": ["qù"],
+    "校": ["xiào", "jiào"],
+    "看": ["kàn", "kān"],
+    "医": ["yī"],
+    "院": ["yuàn"],
+    "爸": ["bà"],
+    "饭": ["fàn"],
+    "馆": ["guǎn"],
+    "习": ["xí"],
+    "想": ["xiǎng"],
+    "喝": ["hē", "hè", "yè"],
+    "茶": ["chá"],
+    "米": ["mǐ"],
+    "下": ["xià"],
+    "午": ["wǔ"],
+    "商": ["shāng"],
+    "店": ["diàn"],
+    "买": ["mǎi"],
+    "卖": ["mài"],
+    "杯": ["bēi"],
+    "子": ["zǐ"],
+    "少": ["shǎo", "shào"],
+    "钱": ["qián"],
+    "块": ["kuài"],
+    "那": ["nà", "nèi", "nā"],
+    "元": ["yuán"],
+    "咖": ["kā", "gā"],
+    "啡": ["fēi"],
+    "卢": ["lú"],
+    "布": ["bù"],
+    "和": ["hé", "hè", "huó", "huò", "hú"],
+    "孩": ["hái"],
+    "哥": ["gē"],
+    "妹": ["mèi"],
+    "休": ["xiū", "xǔ"],
+    "息": ["xī"],
+    "面": ["miàn"],
+    "条": ["tiáo", "tiāo"],
+    "饺": ["jiǎo"],
+    "些": ["xiē", "suò"],
+    "班": ["bān"],
+    "新": ["xīn"],
+    "真": ["zhēn"],
+    "喜": ["xǐ"],
+    "欢": ["huān"],
+    "它": ["tā"],
+    "电": ["diàn"],
+    "脑": ["nǎo"],
+    "上": ["shàng", "shǎng", "shang"],
+    "事": ["shì"],
+    "认": ["rèn"],
+    "识": ["shí", "zhì"],
+    "高": ["gāo"],
+    "兴": ["xīng", "xìng"],
+    "文": ["wén"],
+    "泰": ["tài"],
+    "喂": ["wèi"],
+    "姐": ["jiě"],
+    "还": ["hái", "huán"],
+    "忙": ["máng"],
+    "太": ["tài"],
+    "工": ["gōng"],
+    "作": ["zuò", "zuō"],
+    "也": ["yě"],
+    "超": ["chāo"],
+    "市": ["shì"],
+    "晚": ["wǎn"],
+    "边": ["biān", "bian"],
+    "包": ["bāo"],
+    "非": ["fēi"],
+    "常": ["cháng"],
+    "坐": ["zuò"],
+    "出": ["chū"],
+    "租": ["zū"],
+    "车": ["chē", "jū"],
+    "东": ["dōng"],
+    "西": ["xī"],
+    "牛": ["niú"],
+    "奶": ["nǎi"],
+    "手": ["shǒu"],
+    "机": ["jī"],
+    "话": ["huà"],
+    "幺": ["yāo"],
+    "用": ["yòng"],
+    "知": ["zhī", "zhì"],
+    "道": ["dào"],
+    "回": ["huí"],
+    "早": ["zǎo"],
+    "吧": ["ba", "bā"],
+    "零": ["líng"],
+    "给": ["gěi", "jǐ"],
+    "公": ["gōng"],
+    "司": ["sī"],
+    "玩": ["wán"],
+    "在": ["zài"],
+    "里": ["lǐ", "li"],
+    "衣": ["yī", "yì"],
+    "服": ["fú", "fù"],
+    "影": ["yǐng"],
+    "词": ["cí"],
+    "典": ["diǎn"],
+    "业": ["yè"],
+    "打": ["dǎ", "dá"],
+    "李": ["lǐ"],
+    "白": ["bái"],
+    "陈": ["chén"],
+    "安": ["ān"],
+    "妮": ["nī"],
+    "小": ["xiǎo"],
+    "王": ["wáng", "wàng"],
+    "飞": ["fēi"],
+    "刘": ["liú"],
+    "雪": ["xuě"],
+    "杨": ["yáng"],
+    "乐": ["lè", "yuè", "yào", "lào"],
+    "胡": ["hú"]
+  });
+  function getReadings(char, provider) {
+    let external = [];
+    if (provider && typeof provider.pinyin === 'function') {
+      try { external = provider.pinyin(char, { type: 'array', multiple: true, toneType: 'symbol' }); }
+      catch (_) {}
+    }
+    const available = [...(Array.isArray(external) ? external : []), ...(fallbackReadings[char] || [])];
+    return [...new Set(available.filter(value => typeof value === 'string')
+      .map(value => value.trim().toLowerCase().normalize('NFC'))
+      .filter(value => /^[\p{Script=Latin}\p{Mark}]+$/u.test(value)))];
+  }
   function normalizeCharacter(value) {
     return String(value ?? '').trim().normalize('NFC');
   }
@@ -1660,20 +1891,30 @@ const HanziPractice = (() => {
     const answer = normalizeCharacter(user);
     return !!answer && answer === normalizeCharacter(char);
   }
-  function buildPool(words, names) {
-    const unique = new Set();
+  function buildPool(words, names, provider) {
+    const unique = new Map();
     for (const entry of [...words, ...names]) {
-      for (const char of Array.from(entry.char || '')) {
-        if (/\p{Script=Han}/u.test(char)) unique.add(char);
+      for (const char of new Set(Array.from(entry.char || ''))) {
+        if (!/\p{Script=Han}/u.test(char)) continue;
+        if (!unique.has(char)) unique.set(char, []);
+        const examples = unique.get(char);
+        if (examples.length < 3 && !examples.some(example =>
+            example.char === entry.char && example.pinyin === entry.pinyin && example.translation === entry.translation)) {
+          examples.push({ char: entry.char, pinyin: entry.pinyin || '', translation: entry.translation || '' });
+        }
       }
     }
-    return { cards: Array.from(unique, char => ({ char })), total: unique.size };
+    return { cards: Array.from(unique, ([char, examples]) => ({ char, readings: getReadings(char, provider), examples })), total: unique.size };
   }
   // Закрепление хранит свои попытки и не меняет основной результат.
   function createRound(pool, count, randomize) {
     if (![10, 25].includes(count) || pool.length < count) throw new Error('Недостаточно иероглифов для раунда');
     return {
-      main: randomize(pool).slice(0, count).map(card => ({ char: card.char })),
+      main: randomize(pool).slice(0, count).map(card => ({
+        char: card.char,
+        readings: (card.readings || getReadings(card.char)).slice(),
+        examples: (card.examples || []).map(example => ({ ...example }))
+      })),
       current: [], index: 0, attempts: [], drafts: [], mistakes: [], reinforcement: false
     };
   }
@@ -1735,14 +1976,14 @@ const HanziPractice = (() => {
         timer = null;
         if (isActive()) onAdvance();
       }
-      if (!enabled) { timer = setTimer(advanceWhenVisible, 1000); return; }
+      if (!enabled) { timer = setTimer(advanceWhenVisible, 1005); return; }
       let finished = false;
       function done() {
         if (finished || current !== version) return;
         finished = true;
         if (timer !== null) clearTimer(timer);
         stopAudio();
-        timer = setTimer(advanceWhenVisible, 500);
+        timer = setTimer(advanceWhenVisible, 505);
       }
       ownsAudio = true;
       timer = setTimer(done, 8000);
@@ -1768,7 +2009,7 @@ const HanziPractice = (() => {
   function canSubmit(composing, lastCompositionEnd, now, event = {}) {
     return !composing && !event.isComposing && event.keyCode !== 229 && now - lastCompositionEnd > 50;
   }
-  return Object.freeze({ normalizeCharacter, check, buildPool, createRound, begin, answer, advance, previous, createPlayback, canSubmit });
+  return Object.freeze({ normalizeCharacter, check, getReadings, buildPool, createRound, begin, answer, advance, previous, createPlayback, canSubmit });
 })();
 
 function initializeHanziPractice() {
@@ -1791,7 +2032,7 @@ function initializeHanziPractice() {
     isActive: () => !document.hidden && section.classList.contains('active')
   });
 
-  function pool() { return HanziPractice.buildPool(dictionary, namesData); }
+  function pool() { return HanziPractice.buildPool(dictionary, namesData, window.pinyinPro); }
   function updateInfo() {
     element('pool-info').textContent = 'Уникальных иероглифов в словаре и именах: ' + pool().total;
   }
@@ -1816,9 +2057,17 @@ function initializeHanziPractice() {
     updateInfo();
     if (section.contains(document.activeElement)) document.activeElement.blur();
   }
-  function renderCard(focus) {
+  function setHintVisible(visible) {
+    element('hint').hidden = !visible;
+    element('hint').classList.toggle('show', visible);
+    element('hint-toggle').setAttribute('aria-expanded', String(visible));
+    element('hint-toggle').textContent = visible ? 'скрыть подсказку' : 'показать подсказку';
+  }
+  function renderCard(focus, preserveHint = false) {
     const card = round.current[round.index];
     const attempt = round.attempts[round.index];
+    const hintOpen = preserveHint && !element('hint').hidden;
+    const pinyinText = 'Пиньинь: ' + (card.readings.length ? card.readings.join(', ') : 'недоступен');
     element('progress').textContent = 'Иероглиф ' + (round.index + 1) + ' из ' + round.current.length;
     element('stage').textContent = round.reinforcement ? 'Закрепление ошибок' : '';
     element('char').textContent = card.char;
@@ -1828,10 +2077,25 @@ function initializeHanziPractice() {
     element('answer').readOnly = !!attempt;
     if (attempt) element('answer').setAttribute('aria-invalid', String(!attempt.correct));
     else element('answer').removeAttribute('aria-invalid');
-    element('feedback').textContent = attempt
-      ? (attempt.correct ? 'Верно! ' : 'Неверно. ') + 'Иероглиф: ' + attempt.char : '';
-    element('check-btn').hidden = !!attempt;
-    element('next-btn').hidden = !attempt;
+    element('feedback').replaceChildren();
+    if (attempt) {
+      element('feedback').append(
+        makeElement('div', '', (attempt.correct ? 'Верно! ' : 'Неверно. ') + 'Иероглиф: ' + attempt.char),
+        makeElement('div', 'hanzi-feedback-pinyin', pinyinText)
+      );
+    }
+    element('hint').replaceChildren(makeElement('div', '', pinyinText));
+    if (card.examples.length) {
+      element('hint').appendChild(makeElement('div', 'hanzi-hint-label', 'Примеры из словаря:'));
+      for (const example of card.examples) {
+        element('hint').appendChild(makeElement('div', '', example.char +
+          (example.pinyin ? ' (' + example.pinyin + ')' : '') +
+          (example.translation ? ' — ' + example.translation : '')));
+      }
+    }
+    setHintVisible(hintOpen);
+    element('check-btn').disabled = !!attempt;
+    element('next-btn').disabled = !attempt;
     element('play-btn').hidden = !attempt;
     element('prev-btn').disabled = round.index <= 0;
     if (focus && section.classList.contains('active')) element('answer').focus({ preventScroll: true });
@@ -1856,7 +2120,7 @@ function initializeHanziPractice() {
     const attempt = HanziPractice.answer(round, element('answer').value);
     if (!attempt) return;
     const checkWasFocused = document.activeElement === element('check-btn');
-    renderCard(false);
+    renderCard(false, true);
     if (checkWasFocused) element('next-btn').focus({ preventScroll: true });
     playback.schedule(soundEnabled, attempt.char);
   }
@@ -1909,6 +2173,7 @@ function initializeHanziPractice() {
       if (round && round.attempts[round.index]) next(); else submit();
     }
   });
+  element('hint-toggle').addEventListener('click', () => setHintVisible(element('hint').hidden));
   element('next-btn').addEventListener('click', next);
   element('prev-btn').addEventListener('click', previous);
   element('start-btn').addEventListener('click', start);
@@ -1927,7 +2192,7 @@ function initializeHanziPractice() {
     if (soundEnabled && round && round.attempts[round.index]) playback.play(round.current[round.index].char);
   });
   // Клики не убирают экранную клавиатуру, если поле ввода уже было активно.
-  for (const name of ['check-btn', 'next-btn', 'prev-btn', 'play-btn', 'sound-toggle']) {
+  for (const name of ['check-btn', 'next-btn', 'prev-btn', 'play-btn', 'sound-toggle', 'hint-toggle']) {
     element(name).addEventListener('pointerdown', event => {
       if (event.isPrimary && event.button === 0 && document.activeElement === element('answer')) event.preventDefault();
     });
@@ -1941,3 +2206,4 @@ function initializeHanziPractice() {
   showStart();
 }
 initializeHanziPractice();
+
