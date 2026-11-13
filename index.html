@@ -182,7 +182,7 @@
       <div class="test-progress-text" id="test-progress-text">Вопрос 1 из 10</div>
     </div>
     <div class="test-navigation" id="test-navigation">
-      <button class="test-sound-toggle" id="test-sound-toggle" title="Включить/выключить озвучку">🔊</button>
+      <button type="button" class="test-sound-toggle muted" id="test-sound-toggle" aria-pressed="false" aria-label="Включить озвучку" title="Включить озвучку">🔇</button>
       <button class="test-prev-btn" id="test-prev-btn" disabled>← Предыдущая</button>
     </div>
     <div class="test-card-wrap" id="test-card-container"></div>
@@ -241,9 +241,11 @@
     <div id="hanzi-round" hidden>
       <p id="hanzi-progress" class="quiz-progress-text"></p>
       <p id="hanzi-stage" class="subtitle" role="status"></p>
-      <div class="hanzi-navigation" role="group" aria-label="Озвучка и просмотр карточек">
-        <button type="button" id="hanzi-sound-toggle" class="test-sound-toggle" aria-pressed="true"
-                aria-label="Отключить озвучку ответов" title="Отключить озвучку ответов">🔊</button>
+      <div class="test-navigation" role="group" aria-label="Озвучка и просмотр карточек">
+        <button type="button" id="hanzi-sound-toggle" class="test-sound-toggle muted" aria-pressed="false"
+                aria-label="Включить озвучку ответов" title="Включить озвучку ответов">🔇</button>
+        <button type="button" id="hanzi-prev-btn" class="test-prev-btn" disabled>← Предыдущая</button>
+        <button type="button" id="hanzi-next-btn" class="test-prev-btn" disabled>Следующая →</button>
       </div>
       <div id="hanzi-card" class="card">
         <div class="hanzi-prompt">
@@ -257,9 +259,7 @@
                  autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"
                  maxlength="40" aria-describedby="hanzi-feedback">
           <div class="hanzi-actions">
-            <button type="button" id="hanzi-prev-btn" class="test-btn" disabled>Предыдущая</button>
             <button type="submit" id="hanzi-check-btn" class="test-btn">Проверить</button>
-            <button type="button" id="hanzi-next-btn" class="test-btn" disabled>Следующая</button>
           </div>
         </form>
         <div id="hanzi-feedback" aria-live="polite"></div>
@@ -350,6 +350,7 @@
 
 </body>
 </html>
+
 
 
 

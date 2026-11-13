@@ -1298,7 +1298,7 @@ let testCount = 10;
 let testPool = 'all';
 let testMainQuestions = [];
 let testIsReinforcement = false;
-let testSoundEnabled = true;
+let testSoundEnabled = false;
 let testVersion = 0;
 const testTimers = new Set();
 
@@ -1614,6 +1614,10 @@ document.getElementById('test-restart-during-btn').addEventListener('click', res
 document.getElementById('test-sound-toggle').addEventListener('click', function() {
   testSoundEnabled = !testSoundEnabled;
   this.textContent = testSoundEnabled ? '🔊' : '🔇';
+  this.setAttribute('aria-pressed', String(testSoundEnabled));
+  const label = testSoundEnabled ? 'Отключить озвучку' : 'Включить озвучку';
+  this.setAttribute('aria-label', label);
+  this.title = label;
   if (!testSoundEnabled) {
     this.classList.add('muted');
   } else {
@@ -2019,7 +2023,7 @@ function initializeHanziPractice() {
   let round = null;
   let composing = false;
   let lastCompositionEnd = -Infinity;
-  let soundEnabled = true;
+  let soundEnabled = false;
   const playback = HanziPractice.createPlayback({
     speak: speakChineseWithCallback,
     stop: () => {
@@ -2206,4 +2210,5 @@ function initializeHanziPractice() {
   showStart();
 }
 initializeHanziPractice();
+
 

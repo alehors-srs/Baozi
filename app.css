@@ -606,10 +606,10 @@ body:has(#tab6.active, #tab8.active) .section-navigation {
 .hanzi-practice [hidden] { display: none !important; }
 .hanzi-practice h2 { margin-bottom: 16px; }
 .hanzi-settings { grid-template-columns: minmax(0, 1fr); max-width: 230px; }
-.hanzi-char { font-size: 72px; line-height: 1.5; color: #2c3e50; text-align: center; }
+.hanzi-char { font-size: 54px; line-height: 1.5; color: #2c3e50; text-align: center; }
 .hanzi-practice .card-body label { display: block; margin-bottom: 8px; }
-.hanzi-actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-top: 16px; }
-.hanzi-actions .test-btn { width: 100%; min-width: 0; padding: 12px 4px; font-size: clamp(10px, 2.8vw, 16px); white-space: nowrap; }
+.hanzi-actions { display: flex; justify-content: center; margin-top: 16px; }
+.hanzi-actions .test-btn { width: auto; min-width: 160px; max-width: 100%; padding: 12px 22px; font-size: 16px; white-space: nowrap; }
 #hanzi-status { color: #c0392b; margin-bottom: 12px; }
 #hanzi-feedback { text-align: center; line-height: 1.6; overflow-wrap: anywhere; }
 .hanzi-result-row { padding: 12px; margin-bottom: 8px; border-radius: 10px; background: #fff; line-height: 1.6; overflow-wrap: anywhere; }
@@ -619,8 +619,6 @@ body:has(#tab6.active, #tab8.active) .section-navigation {
 #hanzi-answer { font-size: 28px; }
 #hanzi-answer::placeholder { font-size: 16px; }
 
-.hanzi-navigation { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 16px; }
-.hanzi-navigation .test-sound-toggle { margin: 0; }
 .hanzi-prompt { display: flex; align-items: center; justify-content: center; gap: 16px; }
 .hanzi-prompt .test-sound-toggle { margin: 0; flex-shrink: 0; }
 .hanzi-practice button:disabled { cursor: default; opacity: 0.5; }
@@ -634,3 +632,4 @@ body:has(#tab6.active, #tab8.active) .section-navigation {
 .hanzi-hint-wrap .hint-link { background: transparent; border: 0; border-radius: 0; padding: 8px 0; }
 .hanzi-hint-wrap .hint { padding-bottom: 12px; color: #687780; line-height: 1.6; overflow-wrap: anywhere; }
 .hanzi-hint-label { margin-top: 6px; }
+
