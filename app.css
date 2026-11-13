@@ -620,7 +620,6 @@ body:has(#tab6.active, #tab8.active) .section-navigation {
 #hanzi-answer::placeholder { font-size: 16px; }
 
 .hanzi-prompt { display: flex; align-items: center; justify-content: center; gap: 16px; }
-.hanzi-prompt .test-sound-toggle { margin: 0; flex-shrink: 0; }
 .hanzi-practice button:disabled { cursor: default; opacity: 0.5; }
 
 
@@ -632,4 +631,5 @@ body:has(#tab6.active, #tab8.active) .section-navigation {
 .hanzi-hint-wrap .hint-link { background: transparent; border: 0; border-radius: 0; padding: 8px 0; }
 .hanzi-hint-wrap .hint { padding-bottom: 12px; color: #687780; line-height: 1.6; overflow-wrap: anywhere; }
 .hanzi-hint-label { margin-top: 6px; }
+
 

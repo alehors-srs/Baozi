@@ -2048,7 +2048,6 @@ function initializeHanziPractice() {
     const label = soundEnabled ? 'Отключить озвучку ответов' : 'Включить озвучку ответов';
     button.setAttribute('aria-label', label);
     button.title = label;
-    element('play-btn').disabled = !soundEnabled;
   }
   function showStart() {
     playback.cancel();
@@ -2100,7 +2099,18 @@ function initializeHanziPractice() {
     setHintVisible(hintOpen);
     element('check-btn').disabled = !!attempt;
     element('next-btn').disabled = !attempt;
-    element('play-btn').hidden = !attempt;
+    const charElement = element('char');
+    charElement.classList.toggle('test-char-clickable', !!attempt);
+    charElement.title = attempt ? 'Нажмите, чтобы прослушать' : '';
+    if (attempt) {
+      charElement.setAttribute('role', 'button');
+      charElement.setAttribute('tabindex', '0');
+      charElement.setAttribute('aria-label', 'Прослушать иероглиф ' + card.char);
+    } else {
+      charElement.removeAttribute('role');
+      charElement.removeAttribute('tabindex');
+      charElement.removeAttribute('aria-label');
+    }
     element('prev-btn').disabled = round.index <= 0;
     if (focus && section.classList.contains('active')) element('answer').focus({ preventScroll: true });
   }
@@ -2192,11 +2202,18 @@ function initializeHanziPractice() {
       playback.schedule(soundEnabled, round.current[round.index].char);
     }
   });
-  element('play-btn').addEventListener('click', () => {
-    if (soundEnabled && round && round.attempts[round.index]) playback.play(round.current[round.index].char);
+  function playReviewedCharacter() {
+    if (round && round.attempts[round.index]) playback.play(round.current[round.index].char);
+  }
+  element('char').addEventListener('click', playReviewedCharacter);
+  element('char').addEventListener('keydown', event => {
+    if ((event.key === 'Enter' || event.key === ' ') && round && round.attempts[round.index]) {
+      event.preventDefault();
+      playReviewedCharacter();
+    }
   });
   // Клики не убирают экранную клавиатуру, если поле ввода уже было активно.
-  for (const name of ['check-btn', 'next-btn', 'prev-btn', 'play-btn', 'sound-toggle', 'hint-toggle']) {
+  for (const name of ['check-btn', 'next-btn', 'prev-btn', 'char', 'sound-toggle', 'hint-toggle']) {
     element(name).addEventListener('pointerdown', event => {
       if (event.isPrimary && event.button === 0 && document.activeElement === element('answer')) event.preventDefault();
     });
@@ -2210,5 +2227,6 @@ function initializeHanziPractice() {
   showStart();
 }
 initializeHanziPractice();
+
 
 
