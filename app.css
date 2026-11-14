@@ -532,6 +532,7 @@ body:has(#tab6.active, #tab8.active) .section-navigation {
   outline: 3px solid #3498db;
   outline-offset: 3px;
 }
+#tab-words .word-panel[hidden] { display: none; }
 #practice-testing[hidden], #practice-analysis[hidden], #analysis-result[hidden] { display: none; }
 #analysis-form { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
 #analysis-input { width: 100%; min-width: 0; resize: none; overflow-y: hidden; padding: 12px; font: inherit; font-size: 22px; line-height: 1.5; border: 2px solid #d0d5db; border-radius: 10px; }
@@ -631,5 +632,6 @@ body:has(#tab6.active, #tab8.active) .section-navigation {
 .hanzi-hint-wrap .hint-link { background: transparent; border: 0; border-radius: 0; padding: 8px 0; }
 .hanzi-hint-wrap .hint { padding-bottom: 12px; color: #687780; line-height: 1.6; overflow-wrap: anywhere; }
 .hanzi-hint-label { margin-top: 6px; }
+
 
 

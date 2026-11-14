@@ -20,16 +20,14 @@
 <h1>Тренировка иероглифов</h1>
 
 <nav class="tabs" aria-label="Разделы тренажера">
-  <button type="button" class="tab" data-tab="tab1"
-          aria-controls="tab1" aria-expanded="false"><span class="tab-label">字 - АБВ</span></button>
-  <button type="button" class="tab" data-tab="tab2"
-          aria-controls="tab2" aria-expanded="false"><span class="tab-label">АБВ - 字</span></button>
-  <button type="button" class="tab" data-tab="tab7"
-          aria-controls="tab7" aria-expanded="false"><span class="tab-label">Тест</span></button>
   <button type="button" class="tab" data-tab="tab10"
           aria-controls="tab10" aria-expanded="false"><span class="tab-label">Иероглифы</span></button>
+  <button type="button" class="tab" data-tab="tab-words"
+          aria-controls="tab-words" aria-expanded="false"><span class="tab-label">Слова</span></button>
   <button type="button" class="tab" data-tab="tab9"
           aria-controls="tab9" aria-expanded="false"><span class="tab-label">Предложения</span></button>
+  <button type="button" class="tab" data-tab="tab7"
+          aria-controls="tab7" aria-expanded="false"><span class="tab-label">Тест</span></button>
   <button type="button" class="tab" data-tab="tab6"
           aria-controls="tab6" aria-expanded="false"><span class="tab-label">Словарь</span></button>
   <button type="button" class="tab" data-tab="tab8"
@@ -47,8 +45,18 @@
           aria-label="В конец страницы" title="В конец страницы">↓</button>
 </div>
 
+<!-- Слова: два режима перевода с независимыми раундами. -->
+<div class="tab-content" id="tab-words">
+  <div class="sentences-wrap">
+    <div class="ai-practice-switch" role="group" aria-label="Режим тренировки слов">
+      <button type="button" class="test-btn" data-word-panel="tab1"
+              aria-controls="tab1" aria-pressed="false">字 - АБВ</button>
+      <button type="button" class="test-btn" data-word-panel="tab2"
+              aria-controls="tab2" aria-pressed="false">АБВ - 字</button>
+    </div>
+
 <!-- TAB 1: 字 - АБВ -->
-<div class="tab-content" id="tab1">
+<div class="tab-content word-panel" id="tab1" hidden>
   <p class="subtitle">Переведите 10 иероглифов на русский</p>
   <div id="quiz-start" style="text-align: center;">
     <div class="test-settings" style="grid-template-columns: minmax(0, 1fr); max-width: 150px;">
@@ -75,7 +83,7 @@
 </div>
 
 <!-- TAB 2: АБВ - 字 -->
-<div class="tab-content" id="tab2">
+<div class="tab-content word-panel" id="tab2" hidden>
   <p class="subtitle">Переведите 10 русских слов на китайский</p>
   <div id="quiz-start2" style="text-align: center;">
     <div class="test-settings" style="grid-template-columns: minmax(0, 1fr); max-width: 150px;">
@@ -98,6 +106,9 @@
       <button id="next-btn2" class="next-btn">Следующая</button>
       <button class="new-btn" id="new-btn2">Новый раунд</button>
     </div>
+  </div>
+</div>
+
   </div>
 </div>
 
@@ -348,6 +359,7 @@
 
 </body>
 </html>
+
 
 
 

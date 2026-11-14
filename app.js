@@ -159,7 +159,7 @@ const backToSectionsButton = document.getElementById('back-to-sections');
 let lastSectionButton = null;
 
 backToSectionsButton.addEventListener('click', () => {
-  document.querySelectorAll('.tab-content').forEach(section => {
+  document.querySelectorAll('.tab-content:not(.word-panel)').forEach(section => {
     section.classList.remove('active');
   });
   document.querySelectorAll('.tab').forEach(button => {
@@ -183,7 +183,7 @@ document.querySelectorAll('.tab').forEach(tab => {
       button.setAttribute('aria-expanded', String(selected));
     });
 
-    document.querySelectorAll('.tab-content').forEach(section => {
+    document.querySelectorAll('.tab-content:not(.word-panel)').forEach(section => {
       section.classList.toggle('active', section.id === sectionId);
     });
 
@@ -193,11 +193,24 @@ document.querySelectorAll('.tab').forEach(tab => {
     backToSectionsButton.focus({ preventScroll: true });
     window.scrollTo(0, 0);
 
-    if (!initializedSections.has(sectionId)) {
-      if (sectionId === 'tab1') showQuizStart();
-      if (sectionId === 'tab2') showQuizStart('2');
+  });
+});
 
-      initializedSections.add(sectionId);
+// Подразделы слов сохраняют выбранный режим и независимый прогресс.
+const wordPanelButtons = [...document.querySelectorAll('[data-word-panel]')];
+wordPanelButtons.forEach(button => {
+  button.addEventListener('click', () => {
+    const panelId = button.dataset.wordPanel;
+    wordPanelButtons.forEach(item => {
+      const selected = item === button;
+      const panel = document.getElementById(item.dataset.wordPanel);
+      item.setAttribute('aria-pressed', String(selected));
+      panel.hidden = !selected;
+      panel.classList.toggle('active', selected);
+    });
+    if (!initializedSections.has(panelId)) {
+      showQuizStart(panelId === 'tab2' ? '2' : '');
+      initializedSections.add(panelId);
     }
   });
 });
@@ -291,7 +304,7 @@ function updateQuizCardInPlace(quiz, state, focusInput, reverse = false) {
     : 'Пиньинь: ' + (item.pinyin || '—') + ' | Перевод: ' + item.translation;
   card.querySelector('.hint-link').textContent = 'показать ответ';
   state.answered = false;
-  if (focusInput && quiz.closest('.tab-content').classList.contains('active')) {
+  if (focusInput && quiz.getClientRects().length > 0) {
     input.focus({ preventScroll: true });
   }
   return true;
@@ -300,7 +313,7 @@ function updateQuizCardInPlace(quiz, state, focusInput, reverse = false) {
 function moveQuizNext(state, render, buttonId, delay = 0) {
   if (state.transitioning || state.idx >= state.items.length) return;
   const section = document.getElementById(buttonId).closest('.tab-content');
-  if (section.classList.contains('active')) {
+  if (section.getClientRects().length > 0) {
     const input = section.querySelector('.card input');
     if (input) input.focus({ preventScroll: true });
   }
@@ -398,7 +411,7 @@ function renderQuizCard(focusInput = false) {
   quiz1State.answered = false;
   const inp = card.querySelector('input');
   // Вход в раздел — без курсора; следующая видимая карточка — с курсором.
-  if (focusInput && inp.closest('.tab-content').classList.contains('active')) {
+  if (focusInput && inp.getClientRects().length > 0) {
     inp.focus({ preventScroll: true });
   }
   inp.addEventListener('keydown', e => {
@@ -511,7 +524,7 @@ function renderQuiz2Card(focusInput = false) {
   quiz2State.answered = false;
   const inp = card.querySelector('input');
   // Вход в раздел — без курсора; следующая видимая карточка — с курсором.
-  if (focusInput && inp.closest('.tab-content').classList.contains('active')) {
+  if (focusInput && inp.getClientRects().length > 0) {
     inp.focus({ preventScroll: true });
   }
   inp.addEventListener('keydown', e => {
@@ -2227,6 +2240,7 @@ function initializeHanziPractice() {
   showStart();
 }
 initializeHanziPractice();
+
 
 
 
