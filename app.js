@@ -2051,7 +2051,6 @@ function initializeHanziPractice() {
 
   function pool() { return HanziPractice.buildPool(dictionary, namesData, window.pinyinPro); }
   function updateInfo() {
-    element('pool-info').textContent = 'Уникальных иероглифов в словаре и именах: ' + pool().total;
   }
   function updateSoundButton() {
     const button = element('sound-toggle');
