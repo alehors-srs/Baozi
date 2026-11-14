@@ -282,20 +282,37 @@ const context={window:{}};vm.createContext(context);
 const logic=fs.readFileSync('app.js','utf8').split('// === HANZI PRACTICE:')[1].split('\nfunction initializeHanziPractice()')[0];
 vm.runInContext('// === HANZI PRACTICE:'+logic+'\nthis.p=HanziPractice;',context);
 const p=context.p;
-assert.equal(p.getReadings('好').join(','),'hǎo,hào');
-assert.equal(p.getReadings('乐').join(','),'lè,yuè,yào,lào');
-assert.equal(p.getReadings('一').join(','),'yī');
-assert(p.getReadings('不').includes('bù'));
-assert.equal(p.getReadings('儿').join(','),'ér');
-assert.equal(p.getReadings('龘').length,0);
+// Test doubles exercise the provider contract without a bundled reading dictionary.
+const provider={pinyin(char) {
+  if(char==='你') return ['nǐ'];
+  if(char==='好') return ['hǎo','hào'];
+  return [];
+}};
+assert.equal(p.getReadings('好',provider).join(','),'hǎo,hào');
+assert.equal(p.getReadings('龘',provider).length,0);
+assert.equal(p.getReadings('好').length,0);
+assert.equal(p.getReadings('好',{}).length,0);
+for(const invalid of [undefined,null,'hǎo',42]) {
+  assert.equal(p.getReadings('好',{pinyin(){return invalid;}}).length,0);
+}
 let requested;
 const live=p.getReadings('龘',{pinyin(char,options){requested={char,...options};return ['DÁ','dá','龘',''];}});
 assert.equal(live.join(','),'dá');assert(requested.multiple);assert.equal(requested.type,'array');
 assert.equal(requested.toneType,'symbol');
-assert.equal(p.getReadings('好',{pinyin(){throw new Error('offline');}}).join(','),'hǎo,hào');
+const unavailable={pinyin(){throw new Error('offline');}};
+assert.equal(p.getReadings('好',unavailable).length,0);
 vm.runInContext(fs.readFileSync('words.js','utf8')+fs.readFileSync('names.js','utf8'),context);
 const pool=p.buildPool(context.window.dictionary,context.window.names);
-assert(pool.cards.every(c=>c.readings.length>0));
+assert(pool.cards.length>=10);
+assert(pool.cards.every(c=>c.readings.length===0));
+const unavailablePool=p.buildPool(context.window.dictionary,context.window.names,unavailable);
+assert.equal(unavailablePool.total,pool.total);
+assert(unavailablePool.cards.every(c=>c.readings.length===0));
+const offlineRound=p.begin(p.createRound(unavailablePool.cards,10,a=>[...a]));
+for(let i=0;i<10;i++) {
+  assert.equal(p.answer(offlineRound,offlineRound.current[i].char).correct,true);
+  assert.equal(p.advance(offlineRound,a=>[...a]),i===9?'complete':'next');
+}
 assert(pool.cards.every(c=>c.examples.length>0 && c.examples.length<=3));
 const namesCard=pool.cards.find(c=>c.char==='李');
 assert(namesCard.examples.some(e=>e.char.includes('李')));
@@ -304,15 +321,29 @@ const sources=[{char:'你好',pinyin:'nǐhǎo',translation:'Привет'},
 const examples=p.buildPool(sources,[sources[0]]).cards.find(c=>c.char==='好').examples;
 assert.equal(examples.length,2); // duplicate source entries do not duplicate examples
 assert.equal(examples[0].translation,'Привет'); // preserve meaning of the whole word
-const round=p.begin(p.createRound(pool.cards,10,a=>[...a]));
+const requestedChars=[];
+const withProvider=p.buildPool([{char:'你好一二三四五六七八',pinyin:'',translation:'fixture'}],[],{
+  pinyin(char,options) {
+    requestedChars.push(char);
+    assert.equal(options.multiple,true);
+    assert.equal(options.type,'array');
+    assert.equal(options.toneType,'symbol');
+    return provider.pinyin(char);
+  }
+});
+assert.equal(requestedChars.join(''),'你好一二三四五六七八');
+assert.equal(withProvider.cards.find(c=>c.char==='好').readings.join(','),'hǎo,hào');
+assert.equal(withProvider.cards.find(c=>c.char==='一').readings.length,0);
+const round=p.begin(p.createRound(withProvider.cards,10,a=>[...a]));
 const first=round.current[0];
 const originalReadings=first.readings.join(','), originalExample=first.examples[0].translation;
-pool.cards[0].readings.splice(0);pool.cards[0].examples[0].translation='changed';
+assert.equal(originalReadings,'nǐ');
+withProvider.cards[0].readings.splice(0);withProvider.cards[0].examples[0].translation='changed';
 assert.equal(first.readings.join(','),originalReadings);
 assert.equal(first.examples[0].translation,originalExample);
 const accepted=p.answer(round,first.char);
 assert.equal(accepted.correct,true);assert.equal(accepted.readings.join(','),originalReadings);
-console.log('Hanzi pinyin: all readings, live/offline fallback, name/word examples, metadata snapshots OK');
+console.log('Hanzi pinyin: provider readings, unavailable provider, name/word examples, metadata snapshots OK');
 """
         result=subprocess.run(['node','-e',script],cwd=ROOT,text=True,capture_output=True)
         self.assertEqual(result.returncode,0,result.stdout+result.stderr)
@@ -320,5 +351,6 @@ console.log('Hanzi pinyin: all readings, live/offline fallback, name/word exampl
 
 if __name__ == '__main__':
     unittest.main()
+
 
 
