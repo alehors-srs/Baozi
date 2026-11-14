@@ -486,7 +486,7 @@
 
 // Подгонка названий переключателей: до двух строк.
 (() => {
-  const menu = document.querySelector('.ai-practice-switch');
+  const menu = document.querySelector('#tab9 .ai-practice-switch');
   if (!menu) return;
 
   const labels = [...menu.querySelectorAll('button')].map(button => {
