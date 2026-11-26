@@ -700,6 +700,7 @@ const addTranslationInput = document.getElementById('add-translation');
 const addConfirmBtn = document.getElementById('add-confirm-btn');
 const addCancelBtn = document.getElementById('add-cancel-btn');
 const addStatus = document.getElementById('add-status');
+let lookupController = null;
 
 addLookupBtn.addEventListener('click', lookupWord);
 addCharInput.addEventListener('keydown', e => {
@@ -707,6 +708,7 @@ addCharInput.addEventListener('keydown', e => {
 });
 
 addCancelBtn.addEventListener('click', () => {
+  lookupController?.abort();
   addPreview.style.display = 'none';
   addCharOptions.style.display = 'none';
   addCharOptions.innerHTML = '';
@@ -720,6 +722,7 @@ addCancelBtn.addEventListener('click', () => {
 addConfirmBtn.addEventListener('click', confirmAddWord);
 
 async function lookupWord() {
+  if (addLookupBtn.disabled) return;
   const charVal = addCharInput.value.trim();
   if (!charVal) {
     addStatus.textContent = 'Введите иероглиф или русское слово';
@@ -736,15 +739,22 @@ async function lookupWord() {
   addCharOptions.style.display = 'none';
   addCharOptions.innerHTML = '';
 
-  if (isChineseInput) {
-    // Проверяем полное совпадение только после заполнения пиньиня и перевода.
+  const controller = new AbortController();
+  lookupController = controller;
+  let timedOut = false;
+  addLookupBtn.disabled = true;
+  addLookupBtn.textContent = 'Определяю…';
+  addStatus.textContent = '';
+  addStatus.className = 'add-status';
 
-    addLookupBtn.disabled = true;
-    addLookupBtn.textContent = 'Определяю…';
-    addStatus.textContent = '';
-    addStatus.className = 'add-status';
+  const timeoutId = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, 20_000);
 
-    try {
+  try {
+    if (isChineseInput) {
+      // Проверяем полное совпадение только после заполнения пиньиня и перевода.
       let pinyinVal = '';
       if (typeof pinyinPro !== 'undefined') {
         pinyinVal = pinyinPro.pinyin(charVal, { toneType: 'symbol', type: 'array' }).join('');
@@ -753,14 +763,17 @@ async function lookupWord() {
       let translationVal = '';
       try {
         const apiUrl = 'https://api.mymemory.translated.net/get?q=' + encodeURIComponent(charVal) + '&langpair=zh-CN|ru';
-        const resp = await fetch(apiUrl);
+        const resp = await fetch(apiUrl, { signal: controller.signal });
         const data = await resp.json();
         if (data && data.responseData && data.responseData.translatedText) {
           translationVal = data.responseData.translatedText;
         }
       } catch (e) {
+        if (controller.signal.aborted) return;
         console.log('Translation API error:', e);
       }
+
+      if (controller.signal.aborted) return;
 
       addPinyinInput.value = pinyinVal || '';
       addTranslationInput.value = translationVal || '';
@@ -780,29 +793,17 @@ async function lookupWord() {
         addStatus.className = 'add-status loading';
       }
       addPinyinInput.focus();
-    } catch (e) {
-      addStatus.textContent = 'Ошибка: ' + e.message;
-      addStatus.className = 'add-status error';
-      addPreview.style.display = 'none';
-    } finally {
-      addLookupBtn.disabled = false;
-      addLookupBtn.textContent = 'Определить';
+      return;
     }
-    return;
-  }
 
-  // Russian (or non-Chinese) input — translate ru -> zh and show options
-  addLookupBtn.disabled = true;
-  addLookupBtn.textContent = 'Определяю…';
-  addStatus.textContent = '';
-  addStatus.className = 'add-status';
-  addPreview.style.display = 'none';
+    // Russian (or non-Chinese) input — translate ru -> zh and show options
+    addPreview.style.display = 'none';
 
-  try {
     // Translate Russian -> Chinese via MyMemory API
     const apiUrl = 'https://api.mymemory.translated.net/get?q=' + encodeURIComponent(charVal) + '&langpair=ru|zh-CN';
-    const resp = await fetch(apiUrl);
+    const resp = await fetch(apiUrl, { signal: controller.signal });
     const data = await resp.json();
+    if (controller.signal.aborted) return;
 
     // Collect unique Chinese translations
     const candidates = [];
@@ -885,12 +886,21 @@ async function lookupWord() {
       selectCharOption(optionsData[0].char, optionsData[0].pinyin, charVal);
     }
   } catch (e) {
+    if (controller.signal.aborted) return;
     addStatus.textContent = 'Ошибка: ' + e.message;
     addStatus.className = 'add-status error';
     addPreview.style.display = 'none';
   } finally {
+    clearTimeout(timeoutId);
+    lookupController = null;
     addLookupBtn.disabled = false;
     addLookupBtn.textContent = 'Определить';
+
+    if (timedOut) {
+      addPreview.style.display = 'none';
+      addStatus.textContent = 'Пожалуйста, повторите попытку';
+      addStatus.className = 'add-status error';
+    }
   }
 }
 
@@ -1025,7 +1035,7 @@ function saveWordLocally(word) {
 
 let addWordRequestPending = false;
 async function confirmAddWord() {
-  if (addWordRequestPending) return;
+  if (addWordRequestPending || lookupController) return;
   const candidateWord = {
     char: addCharInput.value.trim(),
     pinyin: addPinyinInput.value.trim(),
