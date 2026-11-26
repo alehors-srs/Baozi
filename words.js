@@ -963,7 +963,7 @@ window.dictionary = [
   {
     "char": "在",
     "pinyin": "zài",
-    "translation": "Обстоятельство места, в процессе, в течение"
+    "translation": "место, в процессе, в течение, существовать, находиться"
   },
   {
     "char": "里",
@@ -994,5 +994,75 @@ window.dictionary = [
     "char": "打电话",
     "pinyin": "dǎdiànhuà",
     "translation": "Звонок, звонить по телефону"
+  },
+  {
+    "char": "现在",
+    "pinyin": "xiànzài",
+    "translation": "теперь, сейчас"
+  },
+  {
+    "char": "点",
+    "pinyin": "diǎn",
+    "translation": "час"
+  },
+  {
+    "char": "早上",
+    "pinyin": "zǎoshàng",
+    "translation": "утро"
+  },
+  {
+    "char": "上午",
+    "pinyin": "shàngwǔ",
+    "translation": "первая половина дня, до полудня"
+  },
+  {
+    "char": "分",
+    "pinyin": "fēn",
+    "translation": "минута"
+  },
+  {
+    "char": "课",
+    "pinyin": "kè",
+    "translation": "Урок, занятие"
+  },
+  {
+    "char": "电影院",
+    "pinyin": "diànyǐngyuàn",
+    "translation": "кинотеатр"
+  },
+  {
+    "char": "事",
+    "pinyin": "shì",
+    "translation": "дело, занятие"
+  },
+  {
+    "char": "上课",
+    "pinyin": "shàngkè",
+    "translation": "идти на занятия"
+  },
+  {
+    "char": "半",
+    "pinyin": "bàn",
+    "translation": "половина"
+  },
+  {
+    "char": "下课",
+    "pinyin": "xiàkè",
+    "translation": "заканчивать урок"
+  },
+  {
+    "char": "晚上",
+    "pinyin": "wǎnshàng",
+    "translation": "Вечер, вечером"
+  },
+  {
+    "char": "分钟",
+    "pinyin": "fēnzhōng",
+    "translation": "минута"
+  },
+  {
+    "char": "后",
+    "pinyin": "hòu",
+    "translation": "Назад, позади"
   }
 ];
