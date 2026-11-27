@@ -46,6 +46,12 @@
   #new-btn, .new-btn { background: #2ecc71; color: #fff; }
   #new-btn:hover, .new-btn:hover { background: #27ae60; }
   #result-banner, #result-banner2 { text-align: center; font-size: 20px; font-weight: bold; margin: 16px 0; min-height: 28px; }
+  #tab-words #result-banner:empty,
+  #tab-words #result-banner2:empty {
+  margin-block: calc(16px / 3);
+  min-height: calc(28px / 3);
+}
+  
   .score-green { color: #27ae60; }
   .score-orange { color: #e67e22; }
   .score-red { color: #e74c3c; }
@@ -591,6 +597,10 @@ body:has(#tab6.active, #tab8.active) .section-navigation {
   min-height: 0;
   aspect-ratio: 1.5;
   padding: 12px;
+}
+#tab-words [data-word-panel] {
+  aspect-ratio: 4.5;
+  padding-block: 0;
 }
 
 /* На телефоне главные разделы тоже расположены в две колонки */
