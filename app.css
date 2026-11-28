@@ -599,7 +599,7 @@ body:has(#tab6.active, #tab8.active) .section-navigation {
   padding: 12px;
 }
 #tab-words [data-word-panel] {
-  aspect-ratio: 4.5;
+  aspect-ratio: 3.0;
   padding-block: 0;
 }
 
