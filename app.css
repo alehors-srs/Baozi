@@ -152,6 +152,37 @@
   .dict-pinyin { font-size: 16px; color: #3498db; font-weight: 600; margin-bottom: 2px; }
   .dict-translation { font-size: 16px; color: #333; }
   .dict-empty { text-align: center; color: #95a5a6; font-size: 16px; padding: 30px; }
+  .dict-edit-btn {
+    flex: 0 0 44px;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    background: #eef4fa;
+    color: #25547a;
+    font-size: 22px;
+  }
+  .dict-edit-btn:hover:not(:disabled) { background: #deebf7; }
+  .dict-edit-btn:disabled { opacity: 0.45; cursor: default; }
+  .dict-edit-form { flex: 1; min-width: 0; display: grid; gap: 10px; }
+  .dict-edit-field { display: grid; gap: 4px; font-size: 14px; font-weight: 600; }
+  .dict-edit-field :is(input, textarea) {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+    padding: 8px 12px;
+    border: 1px solid #d0d5db;
+    border-radius: 8px;
+    font: inherit;
+    font-size: 16px;
+    font-weight: 400;
+  }
+  .dict-edit-field textarea { resize: vertical; }
+  .dict-edit-status:not(:empty) { margin: 0 auto 10px; }
+  .add-status.dict-edit-status:empty, .add-status.dict-edit-feedback:empty {
+    min-height: 0;
+    margin: 0;
+  }
 
   .speak-btn { background: transparent; color: #fff; border: none; border-radius: 50%; width: 36px; height: 36px; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background 0.2s; }
   .speak-btn:hover { background: transparent; }
@@ -320,6 +351,8 @@ button { touch-action: manipulation; }
 @media (max-width: 480px) {
   body { padding: 12px; }
   h1 { font-size: 23px; }
+  .dict-item-editable { gap: 8px; padding: 12px; }
+  .dict-item-editable .dict-char { max-width: 34%; font-size: 26px; }
   .test-settings label { font-size: 14px; }
   .test-settings .test-count-select { font-size: 14px; padding-inline: 8px; }
   .tabs {

@@ -20,17 +20,19 @@ window.TrainerDictionary = Object.freeze({
   snapshot: () => dictionary.map(({ char, pinyin, translation }) => ({ char, pinyin, translation }))
 });
 
-// Сравниваем записи независимо от регистра, лишних пробелов и формы Unicode.
-function normalizeWordField(value) {
+function cleanWordField(value) {
   return String(value ?? '')
     .normalize('NFC')
     // Удаляем невидимые символы Unicode
     .replace(/[\u200B-\u200D\u2060\uFEFF\u00AD]/g, '')
     // Приводим пробелы к единому виду
     .replace(/\s+/g, ' ')
-    .trim()
-    // Игнорируем регистр
-    .toLowerCase();
+    .trim();
+}
+
+// Сравниваем записи независимо от регистра, лишних пробелов и формы Unicode.
+function normalizeWordField(value) {
+  return cleanWordField(value).toLowerCase();
 }
 
 // В словаре встречается старое написание тона breve (nĭ),
@@ -658,13 +660,21 @@ function searchDictionary(query) {
   return results;
 }
 
-function renderDictResults(results) {
+const dictSearch = document.getElementById('dict-search');
+const dictEditStatus = document.getElementById('dict-edit-status');
+let wordEditor = null;
+
+function renderDictResults(results, focusWord) {
+  if (wordEditor) return;
   const container = document.getElementById('dict-results');
   if (results.length === 0) {
     container.innerHTML = '<div class="dict-empty">Ничего не найдено. Попробуйте другой запрос.</div>';
+    if (focusWord) dictSearch.focus({ preventScroll: true });
     return;
   }
   container.innerHTML = '';
+  const sharedWords = new Set(sharedDictionaryWords);
+  let focusButton;
   results.forEach(item => {
     const div = document.createElement('div');
     div.className = 'dict-item';
@@ -678,15 +688,117 @@ function renderDictResults(results) {
       makeSpeakButton(item.char, 'speak-btn-sm'),
       info
     );
+    if (sharedWords.has(item)) {
+      div.classList.add('dict-item-editable');
+      const editButton = makeElement('button', 'dict-edit-btn', '✎');
+      editButton.type = 'button';
+      editButton.title = 'Редактировать слово';
+      editButton.setAttribute('aria-label', 'Редактировать слово ' + item.char);
+      editButton.addEventListener('click', () => openWordEditor(div, item));
+      div.append(editButton);
+      if (focusWord && isExactWordMatch(item, focusWord)) focusButton = editButton;
+    }
     container.appendChild(div);
   });
+  if (focusWord) (focusButton || dictSearch).focus({ preventScroll: true });
 }
 
-document.getElementById('dict-search').addEventListener('input', (e) => {
+dictSearch.addEventListener('input', (e) => {
   const results = searchDictionary(e.target.value);
   renderDictResults(results);
 });
 
+function openWordEditor(card, originalWord) {
+  if (wordEditor) return;
+  const editor = { saving: false };
+  wordEditor = editor;
+  dictSearch.readOnly = true;
+  dictEditStatus.textContent = '';
+  const results = document.getElementById('dict-results');
+  results.querySelectorAll('.dict-edit-btn').forEach(button => { button.disabled = true; });
+
+  const form = makeElement('form', 'dict-edit-form');
+  const inputs = {};
+  for (const [key, title, maxLength] of [
+    ['char', 'Иероглиф', 100],
+    ['pinyin', 'Пиньинь', 300],
+    ['translation', 'Перевод', 2000]
+  ]) {
+    const label = makeElement('label', 'dict-edit-field');
+    const input = document.createElement(key === 'translation' ? 'textarea' : 'input');
+    input.value = originalWord[key];
+    input.required = true;
+    input.maxLength = maxLength;
+    if (key === 'translation') input.rows = 2;
+    inputs[key] = input;
+    label.append(makeElement('span', '', title), input);
+    form.append(label);
+  }
+
+  const status = makeElement('div', 'add-status dict-edit-feedback');
+  status.setAttribute('role', 'status');
+  const actions = makeElement('div', 'add-word-actions');
+  const save = makeElement('button', 'add-confirm-btn', 'Сохранить');
+  save.type = 'submit';
+  const cancel = makeElement('button', 'add-cancel-btn', 'Отмена');
+  cancel.type = 'button';
+  actions.append(save, cancel);
+  form.append(actions, status);
+  card.replaceChildren(form);
+  inputs.char.focus({ preventScroll: true });
+
+  const close = () => {
+    wordEditor = null;
+    dictSearch.readOnly = false;
+  };
+  cancel.addEventListener('click', () => {
+    if (editor.saving) return;
+    close();
+    renderDictResults(searchDictionary(dictSearch.value), originalWord);
+  });
+  form.addEventListener('submit', async event => {
+    event.preventDefault();
+    if (editor.saving) return;
+    if (addWordRequestPending) {
+      status.className = 'add-status dict-edit-feedback error';
+      status.textContent = 'Дождитесь завершения добавления слова и повторите сохранение.';
+      return;
+    }
+    const word = Object.fromEntries(Object.entries(inputs).map(([key, input]) => [key, cleanWordField(input.value)]));
+    if (!validDictionaryWord(word)) {
+      status.className = 'add-status dict-edit-feedback error';
+      status.textContent = 'Заполните иероглиф, пиньинь и перевод.';
+      return;
+    }
+
+    editor.saving = true;
+    dictionaryMutationEpoch++;
+    const controls = [...Object.values(inputs), save, cancel];
+    controls.forEach(control => { control.disabled = true; });
+    status.className = 'add-status dict-edit-feedback loading';
+    status.textContent = 'Сохраняю в Google Sheets…';
+    try {
+      const result = await requestSheets('updateWord', word, originalWord);
+      const position = sharedDictionaryWords.findIndex(item => isExactWordMatch(item, originalWord));
+      if (position === -1) sharedDictionaryWords.push(result.word);
+      else sharedDictionaryWords[position] = result.word;
+      const cached = storeConfirmedDictionary();
+      close();
+      rebuildWorkingDictionary(result.word);
+      dictEditStatus.textContent = cached
+        ? 'Изменения сохранены в Google Sheets.'
+        : 'Изменения сохранены в Google Sheets. Локальную копию обновить не удалось.';
+    } catch (error) {
+      status.className = 'add-status dict-edit-feedback error';
+      status.textContent = error.message || 'Не удалось подтвердить сохранение в Google Sheets.';
+    } finally {
+      editor.saving = false;
+      controls.forEach(control => { control.disabled = false; });
+      dictionaryMutationEpoch++;
+      void refreshDictionaryFromSheets(true);
+    }
+  });
+}
 
 
 // === ADD WORD TO DICTIONARY ===
@@ -930,7 +1042,7 @@ function sendWordToSheets(word) {
   return requestSheets('addWord', word);
 }
 
-function requestSheets(action, word) {
+function requestSheets(action, word, originalWord) {
   return new Promise((resolve, reject) => {
     let endpoint;
     try { endpoint = new URL(GOOGLE_SHEETS_WEB_APP_URL); } catch (_) {
@@ -943,11 +1055,11 @@ function requestSheets(action, word) {
       return;
     }
     if (navigator.onLine === false) {
-      reject(new Error('Для добавления в Google Sheets требуется интернет.'));
+      reject(new Error('Для работы с Google Sheets требуется интернет.'));
       return;
     }
     if (location.origin !== new URL(SITE_CONFIG.siteUrl).origin) {
-      reject(new Error('Добавление доступно на опубликованном сайте ' + SITE_CONFIG.siteUrl));
+      reject(new Error('Google Sheets доступен на опубликованном сайте ' + SITE_CONFIG.siteUrl));
       return;
     }
 
@@ -965,7 +1077,7 @@ function requestSheets(action, word) {
     const input = document.createElement('input');
     input.type = 'hidden';
     input.name = 'payload';
-    input.value = JSON.stringify({ action, requestId, word });
+    input.value = JSON.stringify({ action, requestId, word, originalWord });
     form.appendChild(input);
     let timer;
     let finished = false;
@@ -1007,10 +1119,11 @@ function requestSheets(action, word) {
         resolve(result);
         return;
       }
-      if (!['added', 'duplicate'].includes(result.status) || !result.word ||
-          !['char', 'pinyin', 'translation'].every(key =>
-            typeof result.word[key] === 'string' && result.word[key].trim()) ||
-          !isExactWordMatch(result.word, word)) {
+      const updating = action === 'updateWord';
+      const validStatus = updating ? result.status === 'updated' : ['added', 'duplicate'].includes(result.status);
+      if (!validStatus || !validDictionaryWord(result.word) ||
+          !(updating ? Object.keys(word).every(key => result.word[key] === word[key])
+            : isExactWordMatch(result.word, word))) {
         fail(new Error('Получен некорректный ответ сервера. Проверьте таблицу перед повторной отправкой.'));
         return;
       }
@@ -1020,7 +1133,9 @@ function requestSheets(action, word) {
     };
     window.addEventListener('message', onMessage);
     timer = setTimeout(() => fail(new Error(
-      'Подтверждение не получено. Запись могла сохраниться — проверьте таблицу или повторите отправку: дубль будет проверен.'
+      action === 'updateWord'
+        ? 'Подтверждение не получено. Проверьте, сохранились ли изменения в таблице.'
+        : 'Подтверждение не получено. Запись могла сохраниться — проверьте таблицу или повторите отправку: дубль будет проверен.'
     )), 45000);
     try {
       document.body.append(frame, form);
@@ -1036,6 +1151,11 @@ function saveWordLocally(word) {
 let addWordRequestPending = false;
 async function confirmAddWord() {
   if (addWordRequestPending || lookupController) return;
+  if (wordEditor?.saving) {
+    addStatus.textContent = 'Дождитесь завершения редактирования слова и повторите добавление.';
+    addStatus.className = 'add-status error';
+    return;
+  }
   const candidateWord = {
     char: addCharInput.value.trim(),
     pinyin: addPinyinInput.value.trim(),
@@ -1141,7 +1261,7 @@ function storeSharedDictionarySnapshot() {
   }
 }
 
-function rebuildWorkingDictionary() {
+function rebuildWorkingDictionary(focusWord) {
   const sharedKeys = new Set(sharedDictionaryWords.map(word => JSON.stringify([
     normalizeWordField(word.char), normalizeWordPinyin(word.pinyin), normalizeWordField(word.translation)
   ])));
@@ -1152,23 +1272,26 @@ function rebuildWorkingDictionary() {
   // Preserve the array reference and every active round; only the dictionary view is rendered.
   const merged = uniqueDictionaryWords([...sharedDictionaryWords, ...local]);
   dictionary.splice(0, dictionary.length, ...merged);
-  const query = document.getElementById('dict-search').value;
-  renderDictResults(searchDictionary(query));
+  renderDictResults(searchDictionary(dictSearch.value), focusWord);
 }
 
 function rememberConfirmedSharedWord(word) {
   if (!sharedDictionaryWords.some(existing => isExactWordMatch(existing, word))) {
     sharedDictionaryWords.push({ ...word });
   }
-  sharedDictionaryVersion = null;
-  const cached = storeSharedDictionarySnapshot();
+  const cached = storeConfirmedDictionary();
   rebuildWorkingDictionary();
   return cached;
 }
 
+function storeConfirmedDictionary() {
+  sharedDictionaryVersion = null;
+  return storeSharedDictionarySnapshot();
+}
+
 async function refreshDictionaryFromSheets(force = false) {
   if (document.hidden || navigator.onLine === false) return;
-  if (addWordRequestPending || dictionaryRefreshPromise) {
+  if (addWordRequestPending || wordEditor?.saving || dictionaryRefreshPromise) {
     if (force) dictionaryRefreshAgain = true;
     return dictionaryRefreshPromise;
   }
@@ -1178,7 +1301,7 @@ async function refreshDictionaryFromSheets(force = false) {
     try {
       const result = await requestSheets('getDictionary');
       // A read started before a write must never overwrite its confirmed word.
-      if (epoch !== dictionaryMutationEpoch || addWordRequestPending) {
+      if (epoch !== dictionaryMutationEpoch) {
         dictionaryRefreshAgain = true;
         return;
       }
@@ -1194,7 +1317,7 @@ async function refreshDictionaryFromSheets(force = false) {
   })();
   try { await dictionaryRefreshPromise; } finally {
     dictionaryRefreshPromise = null;
-    if (dictionaryRefreshAgain && !addWordRequestPending) {
+    if (dictionaryRefreshAgain && !addWordRequestPending && !wordEditor?.saving) {
       dictionaryRefreshAgain = false;
       if (!document.hidden && navigator.onLine !== false) {
         setTimeout(() => { void refreshDictionaryFromSheets(); }, 0);
